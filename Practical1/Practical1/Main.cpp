@@ -6,14 +6,18 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <chrono>
+#include <thread>
+
 #include "ShaderUtility.h"
 #include "Cloth.h"
+
+const int SIMULATION_ITERATIONS_PER_FRAME = 16;
 
 Cloth * cloth;
 
 IntegrationScheme currentIntegrationScheme = verlet;
-SCALAR timeStepSizeOffset = 0.0;
-SCALAR springStiffness = 4.0;
 
 bool windEnabled = true;
 bool renderParticlesAndSprings = false;
@@ -22,30 +26,28 @@ bool decreasingStiffness = false;
 bool increasingTimeStepSize = false;
 bool decreasingTimeStepSize = false;
 
+bool printElapsedTime = true;
+
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
 		case GLFW_KEY_1:
-			timeStepSizeOffset = 0;
 			currentIntegrationScheme = forwardEuler;
 			cloth->reinitialize(currentIntegrationScheme);
 			std::cout << "Switched to Forward Euler" << std::endl;
 			break;
 		case GLFW_KEY_2:
-			timeStepSizeOffset = 0;
 			currentIntegrationScheme = semiImplicitEuler;
 			cloth->reinitialize(currentIntegrationScheme);
 			std::cout << "Switched to Semi-implicit Euler" << std::endl;
 			break;
 		case GLFW_KEY_3:
-			timeStepSizeOffset = 0;
 			currentIntegrationScheme = leapfrog;
 			cloth->reinitialize(currentIntegrationScheme);
 			std::cout << "Switched to Leapfrog" << std::endl;
 			break;
 		case GLFW_KEY_4:
-			timeStepSizeOffset = 0;
 			currentIntegrationScheme = verlet;
 			cloth->reinitialize(currentIntegrationScheme);
 			std::cout << "Switched to Verlet" << std::endl;
@@ -63,12 +65,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			break;
 		case GLFW_KEY_Z:
 			decreasingStiffness = true;
-			break;
-		case GLFW_KEY_M:
-			increasingTimeStepSize = true;
-			break;
-		case GLFW_KEY_N:
-			decreasingTimeStepSize = true;
 			break;
 		}
 	}
@@ -155,11 +151,16 @@ int main(void) {
 
 	//Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window)) {
-		//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
-		cloth->addForce(vec3(0, -0.2, 0)*static_cast<SCALAR>(0.0625)); // add gravity each frame, pointing downwards
-		if (windEnabled)
-			cloth->windForce(vec3(0.5, 0, 0.2)*static_cast<SCALAR>(0.0625)); // generate some wind each frame
-		cloth->timeStep(intialTimeStepSizes[currentIntegrationScheme] + timeStepSizeOffset, springStiffness); // calculate the particle positions of the current frame
+
+		auto startTime = std::chrono::high_resolution_clock::now();
+
+		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
+			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
+			cloth->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
+			if (windEnabled)
+				cloth->windForce(vec3(8.0, 0, 7.0)); // generate some wind each frame
+			cloth->timeStep(timeStepSizes[currentIntegrationScheme]); // calculate the particle positions of the current frame
+		}
 
 		//render:
 		glfwGetFramebufferSize(window, &width, &height);
@@ -167,7 +168,7 @@ int main(void) {
 		glViewport(0, 0, width, height);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+
 		if (height == 0) {
 			perspectiveProjection = glm::perspective(glm::radians(80.0f), static_cast<float>(width), 1.0f, 5000.0f);
 		}
@@ -194,23 +195,23 @@ int main(void) {
 		glfwPollEvents();
 
 		if (increasingStiffness) {
-			springStiffness += 0.001;
-			std::cout << "Spring stiffness: " << springStiffness << std::endl;
+			cloth->changeStiffness(1);
+			std::cout << "Spring stiffness: " << cloth->getSpringStiffness() << std::endl;
 		}
 		if (decreasingStiffness) {
-			springStiffness -= 0.001;
-			std::cout << "Spring stiffness: " << springStiffness << std::endl;
+			cloth->changeStiffness(-1);
+			std::cout << "Spring stiffness: " << cloth->getSpringStiffness() << std::endl;
 		}
-		if (increasingTimeStepSize) {
-			timeStepSizeOffset += 0.00001;
-			std::cout << "Time step size: " << intialTimeStepSizes[currentIntegrationScheme] + timeStepSizeOffset 
-				<< std::endl;
-		}
-		if (decreasingTimeStepSize) {
-			timeStepSizeOffset -= 0.00001;
-			std::cout << "Time step size: " << intialTimeStepSizes[currentIntegrationScheme] + timeStepSizeOffset 
-				<< std::endl;
-		}
+
+		auto endTime = std::chrono::high_resolution_clock::now();
+
+		std::chrono::duration<float> fs = endTime - startTime;
+		std::chrono::milliseconds d = std::chrono::duration_cast<std::chrono::milliseconds>(fs);
+
+		if (printElapsedTime)
+			std::cout << d.count() << std::endl;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(16) - d);
 	}
 
 	delete cloth;

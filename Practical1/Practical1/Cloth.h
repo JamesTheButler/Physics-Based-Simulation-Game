@@ -15,17 +15,19 @@ typedef glm::vec3 vec3;
 #define GL_SCALAR GL_FLOAT
 #endif
 
-enum IntegrationScheme { forwardEuler, leapfrog, semiImplicitEuler, verlet };
-const SCALAR FORWARD_INITIAL_EULER_TIMESTEP_SIZE = 0.002;
-const SCALAR SEMI_IMPLICIT_EULER_INITIAL_TIMESTEP_SIZE = 0.002;
-const SCALAR LEAPFROG_INITIAL_TIMESTEP_SIZE = 0.002;
-const SCALAR VERLET_INITIAL_TIMESTEP_SIZE = 0.00625;
+enum IntegrationScheme { forwardEuler, semiImplicitEuler, leapfrog, verlet };
+const SCALAR FORWARD_INITIAL_EULER_TIME_STEP_SIZE = 0.001;
+const SCALAR SEMI_IMPLICIT_EULER_INITIAL_TIME_STEP_SIZE = 0.001;
+const SCALAR LEAPFROG_INITIAL_TIME_STEP_SIZE = 0.001;
+const SCALAR VERLET_INITIAL_TIME_STEP_SIZE = 0.001;
 
-SCALAR intialTimeStepSizes[] = {
-	FORWARD_INITIAL_EULER_TIMESTEP_SIZE,
-	SEMI_IMPLICIT_EULER_INITIAL_TIMESTEP_SIZE,
-	LEAPFROG_INITIAL_TIMESTEP_SIZE,
-	VERLET_INITIAL_TIMESTEP_SIZE
+const SCALAR INITIAL_SPRING_STIFFNESS = 4000.0;
+
+SCALAR timeStepSizes[] = {
+	FORWARD_INITIAL_EULER_TIME_STEP_SIZE,
+	SEMI_IMPLICIT_EULER_INITIAL_TIME_STEP_SIZE,
+	LEAPFROG_INITIAL_TIME_STEP_SIZE,
+	VERLET_INITIAL_TIME_STEP_SIZE
 };
 
 class Spring {
@@ -77,19 +79,21 @@ private:
 	//The cloth consists of a grid of particles. The particle properties are stored in the following vectors:
 	std::vector<vec3> positions;
 	std::vector<vec3> oldPositions;      //used only for verlet integration
-	std::vector<vec3> velocities;        //not used for verlet integration
+	std::vector<vec3> velocities;
 	std::vector<vec3> accelerations;
-	std::vector<vec3> oldAccelerations;  //used only for leapfrog integration
-	std::vector<vec3> accumulatedNormals;
 	std::vector<SCALAR> masses;
 	std::vector<bool> isMovables;
 
-	std::vector<Spring> springs; // springs between the particles	
+	std::vector<vec3> accumulatedNormals;
+
+	std::vector<Spring> springs; // springs between the particles
+	SCALAR springStiffness;
 
 	IntegrationScheme integrationScheme;
-	SCALAR oneMinusDamping = 1.0 - 0.01;
 
 	int width, height;
+
+	bool firstTimeStep = true;
 
 	//OpenGL related member variables:
 	std::vector<unsigned int> trianglesIndices;
@@ -128,6 +132,89 @@ private:
 		springs.push_back(Spring(p1, p2, positions, accelerations, isMovables)); 
 	}
 
+
+	void evaluateForwardEuler(SCALAR timeStepSize) {
+		for (Spring spring : springs) {
+			spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+		}
+
+		for (int i = 0; i < positions.size(); i++) {
+			if (isMovables[i]) {
+				positions[i] = positions[i] + velocities[i] * timeStepSize;
+				velocities[i] = velocities[i] + accelerations[i] * timeStepSize;
+				accelerations[i] = vec3(0, 0, 0);
+			}
+		}
+	}
+
+	void evaluateSemiImplicitEuler(SCALAR timeStepSize) {
+		for (Spring spring : springs) {
+			spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+		}
+
+		for (int i = 0; i < positions.size(); i++) {
+			if (isMovables[i]) {
+				//write your code here...
+			}
+		}
+	}
+
+	void evaluateVerlet(SCALAR timeStepSize) {
+		for (Spring spring : springs) {
+			spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+		}
+
+		if (firstTimeStep) {
+			//Special case for the first time step:
+			for (int i = 0; i < positions.size(); i++) {
+				if (isMovables[i]) {
+					//write your code here...
+				}
+			}
+		}
+
+		else {
+			for (int i = 0; i < positions.size(); i++) {
+				if (isMovables[i]) {
+					//write your code here...
+				}
+			}
+		}
+	}
+
+	void evaluateLeapfrog(SCALAR timeStepSize) {
+		if (firstTimeStep) {
+			//Special case for the first time step:
+			for (Spring spring : springs) {
+				spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+			}
+
+			for (int i = 0; i < positions.size(); i++) {
+				if (isMovables[i]) {
+					//write your code here...
+				}
+			}
+		}
+
+		else {
+			for (int i = 0; i < positions.size(); i++) {
+				if (isMovables[i]) {
+					//write your code here...
+				}
+			}	
+
+			for (Spring spring : springs) {
+				spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+			}
+
+			for (int i = 0; i < positions.size(); i++) {
+				if (isMovables[i]) {
+					//write your code here...
+				}
+			}
+		}
+	}
+
 public:
 
 	//--------------------------------------- Public methods -----------------------------------------------------
@@ -141,24 +228,20 @@ public:
 		this->integrationScheme = integrationScheme;
 		this->shaderProgramId = shaderProgramId;
 
+		springStiffness = INITIAL_SPRING_STIFFNESS;
+
 		positions.resize(numParticlesWidth*numParticlesHeight);
 		accelerations.resize(numParticlesWidth*numParticlesHeight, vec3(0, 0, 0));
 		accumulatedNormals.resize(numParticlesWidth*numParticlesHeight, vec3(0,0,0));
 		masses.resize(numParticlesWidth*numParticlesHeight, 1);
 		isMovables.resize(numParticlesWidth*numParticlesHeight, true);
+		velocities.resize(numParticlesWidth*numParticlesHeight, vec3(0, 0, 0));
 
 		if (integrationScheme == verlet) {
 			oldPositions.resize(numParticlesWidth*numParticlesHeight);
 		}
-		else {
-			velocities.resize(numParticlesWidth*numParticlesHeight, vec3(0, 0, 0));
-		}
 
-		if (integrationScheme == leapfrog) {
-			oldAccelerations.resize(numParticlesWidth*numParticlesHeight, vec3(0, 0, 0));
-		}
-
-		//Creating particles in a grid from (0, 0, 0) to (width, -height, 0):
+		// Creating particles in a grid from (0, 0, 0) to (width, -height, 0):
 		for (int x = 0; x < numParticlesWidth; x++) {
 			for (int y = 0; y < numParticlesHeight; y++) {
 				vec3 pos = vec3(width * (x / static_cast<float>(numParticlesWidth)), -height * 
@@ -171,7 +254,7 @@ public:
 			}
 		}
 
-		//Connecting immediate neighbor particles with springs (distance 1 and sqrt(2) in the grid):
+		// Connecting immediate neighbor particles with springs (distance 1 and sqrt(2) in the grid):
 		for (int x = 0; x < numParticlesWidth; x++) {
 			for (int y = 0; y < numParticlesHeight; y++) {
 				if (x < numParticlesWidth - 1) 
@@ -188,7 +271,7 @@ public:
 			}
 		}
 
-		//Connecting secondary neighbors with springs (distance 2 and sqrt(4) in the grid):
+		// Connecting secondary neighbors with springs (distance 2 and sqrt(4) in the grid):
 		for (int x = 0; x < numParticlesWidth; x++) {
 			for (int y = 0; y < numParticlesHeight; y++) {
 				if (x < numParticlesWidth - 2) 
@@ -205,7 +288,7 @@ public:
 			}
 		}
 
-		//Making the upper left most three and right most three particles unmovable:
+		// making the upper left most three and right most three particles unmovable:
 		for (int i = 0; i < 3; i++) {
 			isMovables[getIndex(0 + i, 0)] = false;
 			isMovables[getIndex(numParticlesWidth - 1 - i, 0)] = false;
@@ -250,24 +333,18 @@ public:
 
 	void reinitialize(IntegrationScheme integrationScheme) {
 		this->integrationScheme = integrationScheme;
+
+		firstTimeStep = true;
+		springStiffness = INITIAL_SPRING_STIFFNESS;
 			   
 		std::fill(accelerations.begin(), accelerations.end(), vec3(0, 0, 0));
+		std::fill(velocities.begin(), velocities.end(), vec3(0, 0, 0));
 
 		if (integrationScheme == verlet) {
 			oldPositions.resize(numParticlesWidth*numParticlesHeight);
-			velocities.resize(0);
-			oldAccelerations.resize(0);
 		}
 		else {
-			velocities.resize(numParticlesWidth*numParticlesHeight);
-			std::fill(velocities.begin(), velocities.end(), vec3(0, 0, 0));
 			oldPositions.resize(0);
-			oldAccelerations.resize(0);
-		}
-
-		if (integrationScheme == leapfrog) {
-			oldAccelerations.resize(numParticlesWidth*numParticlesHeight);
-			std::fill(oldAccelerations.begin(), oldAccelerations.end(), vec3(0, 0, 0));
 		}
 
 		// Creating particles in a grid from (0, 0, 0) to (width, -height, 0):
@@ -341,29 +418,23 @@ public:
 	}
 
 	//Advance the simulation one time step:
-	void timeStep(SCALAR timeStepSize, SCALAR springStiffness) {
-		for (Spring spring : springs) {
-			spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+	void timeStep(SCALAR timeStepSize) {
+		switch (integrationScheme) {
+		case verlet:
+			evaluateVerlet(timeStepSize);
+			break;
+		case semiImplicitEuler:
+			evaluateSemiImplicitEuler(timeStepSize);
+			break;
+		case forwardEuler:
+			evaluateForwardEuler(timeStepSize);
+			break;
+		case leapfrog:
+			evaluateLeapfrog(timeStepSize);
+			break;
 		}
 
-		for (int i = 0; i < positions.size(); i++) {
-			if (isMovables[i]) {
-				switch (integrationScheme) {
-				case verlet:
-					//write your code here for Practical 1...
-					break;
-				case forwardEuler:
-					//write your code here for Practical 1...
-					break;
-				case semiImplicitEuler:
-					//write your code here for Practical 1...
-					break;
-				case leapfrog:
-					//write your code here for Practical 1...
-					break;
-				}
-			}
-		}
+		firstTimeStep = false;
 	}
 
 	//Adds a force uniformly to all particles:
@@ -382,4 +453,10 @@ public:
 			}
 		}
 	}
+
+	inline void changeStiffness(SCALAR delta) {
+		springStiffness += delta;
+	}
+
+	inline SCALAR getSpringStiffness() { return springStiffness; }
 };
