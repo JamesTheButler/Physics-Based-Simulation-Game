@@ -16,12 +16,14 @@ typedef glm::vec3 vec3;
 #endif
 
 enum IntegrationScheme { forwardEuler, semiImplicitEuler, leapfrog, verlet };
-const SCALAR FORWARD_INITIAL_EULER_TIME_STEP_SIZE = 0.001;
-const SCALAR SEMI_IMPLICIT_EULER_INITIAL_TIME_STEP_SIZE = 0.001;
-const SCALAR LEAPFROG_INITIAL_TIME_STEP_SIZE = 0.001;
-const SCALAR VERLET_INITIAL_TIME_STEP_SIZE = 0.001;
+const SCALAR FORWARD_INITIAL_EULER_TIME_STEP_SIZE = .008;
+const SCALAR SEMI_IMPLICIT_EULER_INITIAL_TIME_STEP_SIZE = 0.008;
+const SCALAR LEAPFROG_INITIAL_TIME_STEP_SIZE = 0.008;
+const SCALAR VERLET_INITIAL_TIME_STEP_SIZE = 0.008;
 
 const SCALAR INITIAL_SPRING_STIFFNESS = 4000.0;
+
+const SCALAR DAMP = 1;
 
 SCALAR timeStepSizes[] = {
 	FORWARD_INITIAL_EULER_TIME_STEP_SIZE,
@@ -87,7 +89,7 @@ private:
 	std::vector<vec3> accumulatedNormals;
 
 	std::vector<Spring> springs; // springs between the particles
-	SCALAR springStiffness;
+	SCALAR springStiffness = INITIAL_SPRING_STIFFNESS;
 
 	IntegrationScheme integrationScheme;
 
@@ -134,8 +136,9 @@ private:
 
 
 	void evaluateForwardEuler(SCALAR timeStepSize) {
+		// evaluate and add spring forces to connected particles
 		for (Spring spring : springs) {
-			spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+			spring.addSpringForcesToParticles(springStiffness);
 		}
 
 		for (int i = 0; i < positions.size(); i++) {
@@ -154,21 +157,26 @@ private:
 
 		for (int i = 0; i < positions.size(); i++) {
 			if (isMovables[i]) {
-				//write your code here...
+				velocities[i] = velocities[i] + accelerations[i] * timeStepSize;
+				positions[i] = positions[i] + velocities[i] * timeStepSize;
+				accelerations[i] = vec3(0, 0, 0);
 			}
 		}
 	}
-
+	// #4
 	void evaluateVerlet(SCALAR timeStepSize) {
+		// evaluate and add spring forces to connected particles
 		for (Spring spring : springs) {
-			spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+			spring.addSpringForcesToParticles(springStiffness); 
 		}
 
 		if (firstTimeStep) {
 			//Special case for the first time step:
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
-					//write your code here...
+					velocities[i] = velocities[i] + accelerations[i]  * timeStepSize;
+					positions[i] = positions[i] + velocities[i] * timeStepSize;
+					accelerations[i] = vec3(0, 0, 0);
 				}
 			}
 		}
@@ -176,41 +184,49 @@ private:
 		else {
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
-					//write your code here...
+					vec3 temp = positions[i];
+					positions[i] = positions[i] + positions[i] - oldPositions[i] * DAMP + accelerations[i] * pow(timeStepSize, 2);
+					oldPositions[i] = temp;
+					accelerations[i] = vec3(0, 0, 0);
 				}
 			}
 		}
 	}
 
-	void evaluateLeapfrog(SCALAR timeStepSize) {
+	//#3
+	void evaluateLeapfrog(SCALAR deltaTime) {
+		//Special case for the first time step
 		if (firstTimeStep) {
-			//Special case for the first time step:
+			 // evaluate and add spring forces to connected particles
 			for (Spring spring : springs) {
-				spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+				spring.addSpringForcesToParticles(springStiffness);
 			}
 
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
-					//write your code here...
+					velocities[i] += accelerations[i] * deltaTime * .5f;
 				}
+				accelerations[i] = vec3(0, 0, 0);
 			}
 		}
 
 		else {
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
-					//write your code here...
+					positions[i] += velocities[i] * deltaTime;
 				}
 			}	
 
+			// evaluate and add spring forces to connected particles
 			for (Spring spring : springs) {
-				spring.addSpringForcesToParticles(springStiffness); // evaluate and add spring forces to connected particles
+				spring.addSpringForcesToParticles(springStiffness);
 			}
 
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
-					//write your code here...
+					velocities[i] += accelerations[i] * deltaTime;
 				}
+				accelerations[i] = vec3(0, 0, 0);
 			}
 		}
 	}
@@ -335,7 +351,7 @@ public:
 		this->integrationScheme = integrationScheme;
 
 		firstTimeStep = true;
-		springStiffness = INITIAL_SPRING_STIFFNESS;
+		//springStiffness = INITIAL_SPRING_STIFFNESS;
 			   
 		std::fill(accelerations.begin(), accelerations.end(), vec3(0, 0, 0));
 		std::fill(velocities.begin(), velocities.end(), vec3(0, 0, 0));

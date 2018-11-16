@@ -13,7 +13,7 @@
 #include "ShaderUtility.h"
 #include "Cloth.h"
 
-const int SIMULATION_ITERATIONS_PER_FRAME = 16;
+const int SIMULATION_ITERATIONS_PER_FRAME = 32;
 
 Cloth * cloth;
 
@@ -28,7 +28,7 @@ bool decreasingTimeStepSize = false;
 
 bool printElapsedTime = true;
 
-
+// key input
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
@@ -195,11 +195,11 @@ int main(void) {
 		glfwPollEvents();
 
 		if (increasingStiffness) {
-			cloth->changeStiffness(1);
+			cloth->changeStiffness(0.01*INITIAL_SPRING_STIFFNESS);
 			std::cout << "Spring stiffness: " << cloth->getSpringStiffness() << std::endl;
 		}
 		if (decreasingStiffness) {
-			cloth->changeStiffness(-1);
+			cloth->changeStiffness(-0.01 *INITIAL_SPRING_STIFFNESS);
 			std::cout << "Spring stiffness: " << cloth->getSpringStiffness() << std::endl;
 		}
 
