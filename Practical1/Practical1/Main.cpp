@@ -11,77 +11,81 @@
 #include <thread>
 
 #include "ShaderUtility.h"
-#include "Cloth.h"
 
-const int SIMULATION_ITERATIONS_PER_FRAME = 32;
+//#define DOUBLE_PRECISION			//Uncomment this line to switch to double precision
+#include "Cloth.h"
+#include "RagDoll.h"
+#include "Chain.h"
+
+const SCALAR INITIAL_TIME_STEP_SIZE = 0.008;
+const SCALAR DRAG_CONSTANT = 0.0;
+const int CONSTRAINT_ITERATIONS = 2;
+
+const int SIMULATION_ITERATIONS_PER_FRAME = 2;
 
 Cloth * cloth;
+RagDoll * ragDoll;
+Chain * chain;
 
 IntegrationScheme currentIntegrationScheme = verlet;
 
 bool windEnabled = true;
-bool renderParticlesAndSprings = false;
-bool increasingStiffness = false;
-bool decreasingStiffness = false;
-bool increasingTimeStepSize = false;
-bool decreasingTimeStepSize = false;
+bool renderParticlesAndConstraints = false;
+bool printElapsedTime = false;
+bool drawCloth = true;
+bool drawChain = true;
+bool drawRagDoll = true;
+bool dragEnabled = true;
 
-bool printElapsedTime = true;
 
-// key input
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
 		case GLFW_KEY_1:
-			currentIntegrationScheme = forwardEuler;
-			cloth->reinitialize(currentIntegrationScheme);
-			std::cout << "Switched to Forward Euler" << std::endl;
+			drawCloth = true;
+			drawChain = false;
+			drawRagDoll = false;
+			std::cout << "Switched to drawing cloth" << std::endl;
 			break;
 		case GLFW_KEY_2:
-			currentIntegrationScheme = semiImplicitEuler;
-			cloth->reinitialize(currentIntegrationScheme);
-			std::cout << "Switched to Semi-implicit Euler" << std::endl;
+			drawCloth = false;
+			drawChain = true;
+			drawRagDoll = false;
+			std::cout << "Switched to drawing chain" << std::endl;
 			break;
 		case GLFW_KEY_3:
-			currentIntegrationScheme = leapfrog;
-			cloth->reinitialize(currentIntegrationScheme);
-			std::cout << "Switched to Leapfrog" << std::endl;
+			drawCloth = false;
+			drawChain = false;
+			drawRagDoll = true;
+			std::cout << "Switched to drawing rag doll" << std::endl;
 			break;
-		case GLFW_KEY_4:
-			currentIntegrationScheme = verlet;
+		case GLFW_KEY_A:
+			drawCloth = true;
+			drawChain = true;
+			drawRagDoll = true;
+			std::cout << "Switched to drawing all objects" << std::endl;
+			break;
+		case GLFW_KEY_I:
 			cloth->reinitialize(currentIntegrationScheme);
-			std::cout << "Switched to Verlet" << std::endl;
+			ragDoll->reinitialize(currentIntegrationScheme);
+			chain->reinitialize(currentIntegrationScheme);
+			std::cout << "Reinitialized the simulation" << std::endl;
 			break;
 		case GLFW_KEY_SPACE:
 			windEnabled = !windEnabled;
 			std::cout << (std::string("Turned wind ") + (windEnabled ? "on" : "off")).c_str() << std::endl;
 			break;
 		case GLFW_KEY_R:
-			renderParticlesAndSprings = !renderParticlesAndSprings;
+			renderParticlesAndConstraints = !renderParticlesAndConstraints;
 			std::cout << "Switched rendering mode " << std::endl;
 			break;
-		case GLFW_KEY_X:
-			increasingStiffness = true;
+		case GLFW_KEY_P:
+			printElapsedTime = !printElapsedTime;
+			std::cout << "Switched printing of elapsed time" << std::endl;
 			break;
-		case GLFW_KEY_Z:
-			decreasingStiffness = true;
-			break;
-		}
-	}
-
-	if (action == GLFW_RELEASE) {
-		switch (key) {
-		case GLFW_KEY_X:
-			increasingStiffness = false;
-			break;
-		case GLFW_KEY_Z:
-			decreasingStiffness = false;
-			break;
-		case GLFW_KEY_M:
-			increasingTimeStepSize = false;
-			break;
-		case GLFW_KEY_N:
-			decreasingTimeStepSize = false;
+		case GLFW_KEY_D:
+			dragEnabled = !dragEnabled;
+			std::cout << (std::string("Turned drag ") + (dragEnabled ? "on" : "off")).c_str() << std::endl;
 			break;
 		}
 	}
@@ -140,14 +144,27 @@ int main(void) {
 	glm::mat4 modelViewProjectionMatrix;
 	glm::mat4 normalTransformationMatrix;
 
-	cloth = new Cloth(14, 10, 55, 45, currentIntegrationScheme, shaderProgramId);
+	const SCALAR timeStepSize = INITIAL_TIME_STEP_SIZE;
+	const SCALAR dragConstant = DRAG_CONSTANT;
+	const int constraintIterations = CONSTRAINT_ITERATIONS;
 
-	std::cout << "Press buttons 1-4 to change integration method (1: Forward Euler, 2: Semi-implicit Euler, 3: Leapfrog, 4: Verlet)" 
-		<< std::endl;
+	cloth = new Cloth(14, 10, 55, 45, currentIntegrationScheme, shaderProgramId);
+	cloth->solver->setConstraintIterations(constraintIterations);
+	cloth->solver->setDragConstant(dragConstant);
+
+	chain = new Chain(currentIntegrationScheme, shaderProgramId);
+	chain->solver->setConstraintIterations(constraintIterations);
+	chain->solver->setDragConstant(dragConstant);
+
+	ragDoll = new RagDoll(currentIntegrationScheme, shaderProgramId);
+	ragDoll->solver->setConstraintIterations(constraintIterations);
+	ragDoll->solver->setDragConstant(dragConstant);
+
+	std::cout << "Press 1 to draw cloth, 2 to draw chain, 3 to draw rag doll, and press a to render all of them" << std::endl;
 	std::cout << "Press space to switch wind on/off" << std::endl;
-	std::cout << "Press z and x to decrease/increase the spring stiffness force" << std::endl;
-	std::cout << "Press n and m to decrease/increase the time step size" << std::endl;
-	std::cout << "Press r to switch between mesh rendering and particle and springs rendering" << std::endl;
+	std::cout << "Press r to switch between mesh rendering and particle and constraints rendering" << std::endl;
+	std::cout << "Press i to reinitialize the simulation" << std::endl;
+	std::cout << "Press p to turn printing of elapsed time on or off" << std::endl;
 
 	//Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window)) {
@@ -159,7 +176,13 @@ int main(void) {
 			cloth->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
 			if (windEnabled)
 				cloth->windForce(vec3(8.0, 0, 7.0)); // generate some wind each frame
-			cloth->timeStep(timeStepSizes[currentIntegrationScheme]); // calculate the particle positions of the current frame
+			cloth->timeStep(timeStepSize, dragEnabled); // calculate the particle positions of the current frame
+
+			chain->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
+			chain->timeStep(timeStepSize, dragEnabled); // calculate the particle positions of the current frame
+
+			ragDoll->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
+			ragDoll->timeStep(timeStepSize, dragEnabled); // calculate the particle positions of the current frame
 		}
 
 		//render:
@@ -177,16 +200,43 @@ int main(void) {
 				static_cast<float>(height), 1.0f, 5000.0f);
 		}
 
-		modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
-		modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(25.0f), glm::vec3(0, 1, 0));
-		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
-		
-		modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-		glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+		if (drawCloth) {
+			modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
+			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(25.0f), glm::vec3(0, 1, 0));
+			normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
 
-		cloth->draw(renderParticlesAndSprings);
+			modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+			cloth->calculateNormals();
+			cloth->renderer->draw(renderParticlesAndConstraints);
+		}
+
+		if (drawChain) {
+			modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0, -5));
+			normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+			modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+			chain->renderer->draw(true);
+		}
+
+		if (drawRagDoll) {
+			modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f, 0, -5));
+			normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+			modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+			ragDoll->renderer->draw(true);
+		}
 		
 		//Swap front and back buffers 
 		glfwSwapBuffers(window);
@@ -194,20 +244,11 @@ int main(void) {
 		//Poll for and process events 
 		glfwPollEvents();
 
-		if (increasingStiffness) {
-			cloth->changeStiffness(0.01*INITIAL_SPRING_STIFFNESS);
-			std::cout << "Spring stiffness: " << cloth->getSpringStiffness() << std::endl;
-		}
-		if (decreasingStiffness) {
-			cloth->changeStiffness(-0.01 *INITIAL_SPRING_STIFFNESS);
-			std::cout << "Spring stiffness: " << cloth->getSpringStiffness() << std::endl;
-		}
-
 		auto endTime = std::chrono::high_resolution_clock::now();
 
 		std::chrono::duration<float> fs = endTime - startTime;
 		std::chrono::milliseconds d = std::chrono::duration_cast<std::chrono::milliseconds>(fs);
-
+		
 		if (printElapsedTime)
 			std::cout << d.count() << std::endl;
 
@@ -215,6 +256,7 @@ int main(void) {
 	}
 
 	delete cloth;
+	delete ragDoll;
 
 	glfwTerminate();
 	return 0;

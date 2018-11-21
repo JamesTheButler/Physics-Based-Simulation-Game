@@ -142,8 +142,14 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Chain.h" />
     <ClInclude Include="Cloth.h" />
+    <ClInclude Include="Constraint.h" />
+    <ClInclude Include="PositionBasedObject.h" />
+    <ClInclude Include="RagDoll.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="ShaderUtility.h" />
+    <ClInclude Include="Solver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
