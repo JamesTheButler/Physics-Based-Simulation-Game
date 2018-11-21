@@ -14,7 +14,6 @@ private:
 
 	//--------------------------------------- Private methods ----------------------------------------------------
 	inline int getIndex(int x, int y) { return y * numParticlesWidth + x; }
-				if (isMovables[i]) {
 
 public:
 

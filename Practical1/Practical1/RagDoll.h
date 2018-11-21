@@ -30,7 +30,30 @@ private:
 	}
 
 	void initializeConstraints() {
-		//write your code here...
+		makeConstraint(0, 1);
+		makeConstraint(1, 2);
+		makeConstraint(2, 3);
+		makeConstraint(15, 14);
+		makeConstraint(14, 13);
+		makeConstraint(13, 12);
+		makeConstraint(2, 12);
+		makeConstraint(2, 13);
+		makeConstraint(3, 12);
+		makeConstraint(3, 13);
+		makeConstraint(3, 4);
+		makeConstraint(3, 7);
+		makeConstraint(3, 9);
+		makeConstraint(4, 9);
+		makeConstraint(4, 12);
+		makeConstraint(4, 5);
+		makeConstraint(5, 6);
+		makeConstraint(4, 7);
+		makeConstraint(7, 8);
+		makeConstraint(7, 9);
+		makeConstraint(7, 12);
+		makeConstraint(9, 12);
+		makeConstraint(9, 10);
+		makeConstraint(10, 11);
 	}
 
 public:
