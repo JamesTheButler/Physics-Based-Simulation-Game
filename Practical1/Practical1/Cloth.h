@@ -33,7 +33,7 @@ public:
 		velocities.resize(numParticlesWidth*numParticlesHeight, vec3(0, 0, 0));
 
 		solver = new Solver(integrationScheme, positions, oldPositions, velocities, accelerations, masses, isMovables, constraints);
-		renderer = new Renderer(shaderProgramId, positions, constraints, trianglesIndices, numParticlesWidth*numParticlesHeight);
+		renderer = new ClothRenderer(shaderProgramId, positions, constraints, numParticlesWidth*numParticlesHeight);
 
 		// Creating particles in a grid from (0, 0, 0) to (width, -height, 0):
 		for (int x = 0; x < numParticlesWidth; x++) {
@@ -89,13 +89,15 @@ public:
 
 		for (int x = 0; x < numParticlesWidth - 1; x++) {
 			for (int y = 0; y < numParticlesHeight - 1; y++) {
-				trianglesIndices.push_back(getIndex(x + 1, y));
-				trianglesIndices.push_back(getIndex(x, y));
-				trianglesIndices.push_back(getIndex(x, y + 1));
+				ClothRenderer * clothRenderer = static_cast<ClothRenderer*>(renderer);
 
-				trianglesIndices.push_back(getIndex(x + 1, y + 1));
-				trianglesIndices.push_back(getIndex(x + 1, y));
-				trianglesIndices.push_back(getIndex(x, y + 1));
+				clothRenderer->addTriangleIndex(getIndex(x + 1, y));
+				clothRenderer->addTriangleIndex(getIndex(x, y));
+				clothRenderer->addTriangleIndex(getIndex(x, y + 1));
+
+				clothRenderer->addTriangleIndex(getIndex(x + 1, y + 1));
+				clothRenderer->addTriangleIndex(getIndex(x + 1, y));
+				clothRenderer->addTriangleIndex(getIndex(x, y + 1));
 			}
 		}
 

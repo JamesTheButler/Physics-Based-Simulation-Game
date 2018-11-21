@@ -29,8 +29,6 @@ protected:
 
 	std::vector<Constraint> constraints; // constraints between the particles
 
-	std::vector<unsigned int> trianglesIndices;
-
 	//Method for calculating the triangle normal:
 	vec3 calcTriangleNormal(int p1, int p2, int p3) {
 		vec3 pos1 = positions[p1];
