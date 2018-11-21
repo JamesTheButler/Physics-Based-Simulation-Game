@@ -66,7 +66,8 @@ public:
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
 					if (dragEnabled) {
-						//write your code here...
+						glm::vec3 dragForce = dragConstant * velocities[i];
+						accelerations[i] += dragForce * masses[i];
 					}
 					vec3 temp = positions[i];
 					positions[i] = positions[i] + positions[i] - oldPositions[i] + accelerations[i] * pow(timeStepSize, 2);
