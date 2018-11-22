@@ -5,6 +5,10 @@
 
 #include "Constraint.h"
 
+#include "SphereCollider.h"
+#include "CapsuleCollider.h"
+#include "PlaneCollider.h"
+
 enum IntegrationScheme { verlet };
 
 class Solver {
@@ -19,6 +23,8 @@ private:
 	std::vector<bool> & isMovables;
 
 	std::vector<Constraint> & constraints;
+
+	std::vector<Collider*> colliders;
 
 	bool firstTimeStep = true;
 	IntegrationScheme integrationScheme;
@@ -84,10 +90,18 @@ public:
 			}
 		}
 
+		//Collision detection
+		for (vec3 & position : positions) {
+			for (Collider* collider : colliders) {
+				if (collider->isActive())
+					collider->handleCollision(position);
+			}
+		}
+
 		//Velocity correction:
 		for (int i = 0; i < positions.size(); i++) {
 			if (isMovables[i]) {
-				velocities[i] = (positions[i] - oldPositions[i] ) / timeStepSize;
+				velocities[i] = (positions[i] - oldPositions[i]) / timeStepSize;
 			}
 		}
 	}
@@ -107,4 +121,10 @@ public:
 	void setToFirstTimeStep() {
 		firstTimeStep = true;
 	}
+
+	void setColliders(std::vector<Collider*> colliders) {
+		this->colliders = colliders;
+	}
+
+	
 };

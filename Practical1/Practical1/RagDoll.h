@@ -73,7 +73,7 @@ public:
 		velocities.resize(numberOfParticles, vec3(0, 0, 0));
 
 		solver = new Solver(integrationScheme, positions, oldPositions, velocities, accelerations, masses, isMovables, constraints);
-		renderer = new Renderer(shaderProgramId, positions, constraints, trianglesIndices, numberOfParticles);
+		renderer = new ParticleNetworkRenderer(shaderProgramId, positions, constraints, numberOfParticles);
 
 		initializePositions();
 		for (int i = 0; i < positions.size(); i++) {

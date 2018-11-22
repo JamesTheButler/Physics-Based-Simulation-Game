@@ -13,30 +13,47 @@
 #include "ShaderUtility.h"
 
 //#define DOUBLE_PRECISION			//Uncomment this line to switch to double precision
+
+#include "ClothRenderer.h"
+#include "ParticleNetworkRenderer.h"
+#include "SphereRenderer.h"
+#include "CapsuleRenderer.h"
+#include "PlaneRenderer.h"
+
 #include "Cloth.h"
 #include "RagDoll.h"
 #include "Chain.h"
 
 const SCALAR INITIAL_TIME_STEP_SIZE = 0.008;
-const SCALAR DRAG_CONSTANT = 0.7;
+const SCALAR DRAG_CONSTANT = 0.0;
 const int CONSTRAINT_ITERATIONS = 2;
 
-const int SIMULATION_ITERATIONS_PER_FRAME = 2;
+const int SIMULATION_ITERATIONS_PER_FRAME = 3;
 
 Cloth * cloth;
 RagDoll * ragDoll;
 Chain * chain;
 
+SphereCollider * sphereCollider;
+CapsuleCollider * capsuleCollider;
+PlaneCollider * planeCollider;
+
 IntegrationScheme currentIntegrationScheme = verlet;
 
-bool windEnabled = true;
+bool windEnabled = false;
 bool renderParticlesAndConstraints = false;
 bool printElapsedTime = false;
 bool drawCloth = true;
-bool drawChain = true;
-bool drawRagDoll = true;
+bool drawChain = false;
+bool drawRagDoll = false;
 bool dragEnabled = true;
 
+bool capsuleActive = false;
+bool sphereActive = false;
+bool planeActive = false;
+
+float timer = 0.0f;
+float viewingAngle = 25.0f;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
@@ -69,6 +86,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			cloth->reinitialize(currentIntegrationScheme);
 			ragDoll->reinitialize(currentIntegrationScheme);
 			chain->reinitialize(currentIntegrationScheme);
+			timer = 0.0f;
 			std::cout << "Reinitialized the simulation" << std::endl;
 			break;
 		case GLFW_KEY_SPACE:
@@ -77,6 +95,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			break;
 		case GLFW_KEY_R:
 			renderParticlesAndConstraints = !renderParticlesAndConstraints;
+			static_cast<ClothRenderer*>(cloth->renderer)->setRenderParticlesAndConstraintsEnabled(renderParticlesAndConstraints);
 			std::cout << "Switched rendering mode " << std::endl;
 			break;
 		case GLFW_KEY_P:
@@ -87,8 +106,82 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			dragEnabled = !dragEnabled;
 			std::cout << (std::string("Turned drag ") + (dragEnabled ? "on" : "off")).c_str() << std::endl;
 			break;
+		case GLFW_KEY_C:
+			capsuleActive = !capsuleActive;
+			sphereActive = false;
+			planeActive = false;
+			timer = 0.0f;
+			viewingAngle = capsuleActive ? 70.0f : 25.0f;
+			sphereCollider->setActive(sphereActive);
+			capsuleCollider->setActive(capsuleActive);
+			planeCollider->setActive(planeActive);
+			std::cout << (std::string("Turned capsule collider ") + (capsuleActive ? "on" : "off")).c_str() << std::endl;
+			break;
+		case GLFW_KEY_V:
+			sphereActive = !sphereActive;
+			capsuleActive = false;
+			planeActive = false;
+			timer = 0.0f;
+			viewingAngle = sphereActive ? 70.0f : 25.0f;
+			sphereCollider->setActive(sphereActive);
+			capsuleCollider->setActive(capsuleActive);
+			planeCollider->setActive(planeActive);
+			std::cout << (std::string("Turned sphere collider ") + (sphereActive ? "on" : "off")).c_str() << std::endl;
+			break;
+		case GLFW_KEY_B:
+			planeActive = !planeActive;
+			capsuleActive = false;
+			sphereActive = false;
+			timer = 0.0f;
+			viewingAngle = planeActive ? 70.0f : 25.0f;
+			sphereCollider->setActive(sphereActive);
+			capsuleCollider->setActive(capsuleActive);
+			planeCollider->setActive(planeActive);
+			std::cout << (std::string("Turned plane collider ") + (planeActive ? "on" : "off")).c_str() << std::endl;
+			windEnabled = true;
+			break;
 		}
 	}
+}
+
+void renderCapsule(CapsuleCollider * capsuleCollider, glm::mat4 & perspectiveProjection, GLuint mvLocation, GLuint mvpLocation, GLuint normalMatrixLocation) {
+	//Render cylinder:
+	glm::mat4 modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
+	modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
+	modelViewMatrix = glm::translate(modelViewMatrix, capsuleCollider->getPosition());
+	glm::mat4 normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+	glm::mat4 modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+	glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+	glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+	glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+	capsuleCollider->renderer->draw();
+
+	//Render one half circle:
+	glm::mat4 temp = glm::mat4(modelViewMatrix);
+	modelViewMatrix = glm::translate(modelViewMatrix, glm::vec3(0, 0, -capsuleCollider->getLength() * 0.5f));
+	modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+	normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+	modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+	glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+	glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+	glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+	static_cast<CapsuleRenderer*>(capsuleCollider->renderer)->drawHemisphere();
+
+	//Render the other half circle:
+	modelViewMatrix = glm::translate(temp, glm::vec3(0, 0, capsuleCollider->getLength() * 0.5f));
+	modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(90.0f), glm::vec3(1, 0, 0));
+	normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+	modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+	glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+	glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+	glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+	static_cast<CapsuleRenderer*>(capsuleCollider->renderer)->drawHemisphere();
 }
 
 int main(void) {
@@ -102,7 +195,7 @@ int main(void) {
 	int height = 720;
 
 	//Create a windowed mode window and its OpenGL context:
-	window = glfwCreateWindow(width, height, "Practical 1", NULL, NULL);
+	window = glfwCreateWindow(width, height, "Practical 3", NULL, NULL);
 	if (!window) {
 		glfwTerminate();
 		return -1;
@@ -148,28 +241,60 @@ int main(void) {
 	const SCALAR dragConstant = DRAG_CONSTANT;
 	const int constraintIterations = CONSTRAINT_ITERATIONS;
 
+	std::vector<Collider *> colliders;
+	sphereCollider = new SphereCollider(vec3(7, -5, -0.125), 2.0, shaderProgramId);
+	sphereCollider->setActive(sphereActive);
+	colliders.push_back(sphereCollider);
+
+	capsuleCollider = new CapsuleCollider(vec3(7, -5, 0), 1.0f, 15.0f, vec3(0, 0, 1), shaderProgramId);
+	capsuleCollider->setActive(capsuleActive);
+	colliders.push_back(capsuleCollider);
+
+	planeCollider = new PlaneCollider(vec3(7, -5, -0.125), vec3(0, 1, 0), shaderProgramId);
+	planeCollider->setActive(planeActive);
+	colliders.push_back(planeCollider);
+
 	cloth = new Cloth(14, 10, 55, 45, currentIntegrationScheme, shaderProgramId);
 	cloth->solver->setConstraintIterations(constraintIterations);
 	cloth->solver->setDragConstant(dragConstant);
+	cloth->solver->setColliders(colliders);
 
 	chain = new Chain(currentIntegrationScheme, shaderProgramId);
 	chain->solver->setConstraintIterations(constraintIterations);
 	chain->solver->setDragConstant(dragConstant);
+	chain->solver->setColliders(colliders);
 
 	ragDoll = new RagDoll(currentIntegrationScheme, shaderProgramId);
 	ragDoll->solver->setConstraintIterations(constraintIterations);
 	ragDoll->solver->setDragConstant(dragConstant);
+	ragDoll->solver->setColliders(colliders);
 
 	std::cout << "Press 1 to draw cloth, 2 to draw chain, 3 to draw rag doll, and press a to render all of them" << std::endl;
 	std::cout << "Press space to switch wind on/off" << std::endl;
 	std::cout << "Press r to switch between mesh rendering and particle and constraints rendering" << std::endl;
 	std::cout << "Press i to reinitialize the simulation" << std::endl;
 	std::cout << "Press p to turn printing of elapsed time on or off" << std::endl;
+	std::cout << "Press c to turn capsule collider on/off" << std::endl;
+	std::cout << "Press v to turn sphere collider on/off" << std::endl;
+	std::cout << "Press b to turn plane collider on/off" << std::endl;
 
 	//Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window)) {
 
 		auto startTime = std::chrono::high_resolution_clock::now();
+
+		timer++;
+		//sphereCollider->addToPosition(vec3(0, 0, cos(ball_time * 0.016)) * 0.075f);
+		//capsuleCollider->addToPosition(vec3(0, 0, cos(ball_time * 0.016)) * 0.075f);
+
+		if (sphereActive)
+			sphereCollider->setPosition(vec3(7, -5, cos(timer / 50.0) * 7));
+
+		if (capsuleActive)
+			capsuleCollider->setPosition(vec3(7, -5, cos(timer / 100.0) * 9 + 5));
+
+		if (planeActive)
+			planeCollider->setPosition(vec3(7, -cos(timer / 100.0) * 5 - 10.5, 0));
 
 		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
@@ -202,7 +327,7 @@ int main(void) {
 
 		if (drawCloth) {
 			modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
-			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(25.0f), glm::vec3(0, 1, 0));
+			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
 			normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
 
 			modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
@@ -211,7 +336,7 @@ int main(void) {
 			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
 
 			cloth->calculateNormals();
-			cloth->renderer->draw(renderParticlesAndConstraints);
+			cloth->renderer->draw();
 		}
 
 		if (drawChain) {
@@ -223,7 +348,7 @@ int main(void) {
 			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
 
-			chain->renderer->draw(true);
+			chain->renderer->draw();
 		}
 
 		if (drawRagDoll) {
@@ -235,9 +360,41 @@ int main(void) {
 			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
 
-			ragDoll->renderer->draw(true);
+			ragDoll->renderer->draw();
 		}
+
+		if (sphereActive) {
+			glm::mat4 modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
+			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
+			modelViewMatrix = glm::translate(modelViewMatrix, sphereCollider->getPosition());
+			glm::mat4 normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+			glm::mat4 modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+			sphereCollider->renderer->draw();
+		}
+
+		if (capsuleActive)
+			renderCapsule(capsuleCollider, perspectiveProjection, mvLocation, mvpLocation, normalMatrixLocation);
 		
+		if (planeActive) {
+			glm::mat4 modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
+			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
+			modelViewMatrix = glm::translate(modelViewMatrix, planeCollider->getPosition());
+			glm::mat4 normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+			glm::mat4 modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+			planeCollider->renderer->draw();
+		}
+
+
 		//Swap front and back buffers 
 		glfwSwapBuffers(window);
 
@@ -256,6 +413,7 @@ int main(void) {
 	}
 
 	delete cloth;
+	delete chain;
 	delete ragDoll;
 
 	glfwTerminate();

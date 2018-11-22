@@ -32,13 +32,12 @@ public:
 		restDistance = glm::length(vec);
 	}
 
-	//This method is called by Cloth.timeStep():
 	void solveConstraints() {
 		glm::vec3 vec = positions[p1] - positions[p2];
 
 		if (isMovables[p1])
 			positions[p1] += -0.5f *(glm::length(vec) - restDistance) * glm::normalize(vec);
-		if(isMovables[p2])
+		if (isMovables[p2])
 			positions[p2] += 0.5f *(glm::length(vec) - restDistance) * glm::normalize(vec);
 	}
 
