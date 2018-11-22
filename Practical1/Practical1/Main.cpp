@@ -140,7 +140,7 @@ int main(void) {
 	glm::mat4 modelViewProjectionMatrix;
 	glm::mat4 normalTransformationMatrix;
 
-	cloth = new Cloth(14, 10, 55, 45, currentIntegrationScheme, shaderProgramId);
+	cloth = new Cloth(14, 10, 45, 35, currentIntegrationScheme, shaderProgramId);
 
 	std::cout << "Press buttons 1-4 to change integration method (1: Forward Euler, 2: Semi-implicit Euler, 3: Leapfrog, 4: Verlet)" 
 		<< std::endl;
@@ -158,7 +158,7 @@ int main(void) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
 			cloth->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
 			if (windEnabled)
-				cloth->windForce(vec3(8.0, 0, 7.0)); // generate some wind each frame
+				cloth->windForce(vec3(1.0, 0, 1.0)); // generate some wind each frame
 			cloth->timeStep(timeStepSizes[currentIntegrationScheme]); // calculate the particle positions of the current frame
 		}
 

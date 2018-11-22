@@ -21,9 +21,9 @@ const SCALAR SEMI_IMPLICIT_EULER_INITIAL_TIME_STEP_SIZE = 0.008;
 const SCALAR LEAPFROG_INITIAL_TIME_STEP_SIZE = 0.008;
 const SCALAR VERLET_INITIAL_TIME_STEP_SIZE = 0.008;
 
-const SCALAR INITIAL_SPRING_STIFFNESS = 4000.0;
+const SCALAR INITIAL_SPRING_STIFFNESS = 4000.0; //100000, 2750000, 5000000
 
-const SCALAR DAMP = 1;
+const SCALAR DAMP = 0.5;
 
 SCALAR timeStepSizes[] = {
 	FORWARD_INITIAL_EULER_TIME_STEP_SIZE,
@@ -185,7 +185,7 @@ private:
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
 					vec3 temp = positions[i];
-					positions[i] = positions[i] + positions[i] - oldPositions[i] * DAMP + accelerations[i] * pow(timeStepSize, 2);
+					positions[i] = positions[i] + (positions[i] - oldPositions[i]) /** DAMP*/ + accelerations[i] * pow(timeStepSize, 2);
 					oldPositions[i] = temp;
 					accelerations[i] = vec3(0, 0, 0);
 				}
