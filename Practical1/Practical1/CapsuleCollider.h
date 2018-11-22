@@ -36,8 +36,13 @@ public:
 		
 		vec3 & a = endPoint;
 		vec3 b = a - orientation * length;
-
-		//write your code here...
+		
+		float t = glm::dot((particlePosition - a), b-a/(glm::distance(b, a)*glm::distance(b, a)));
+		if (t < 0.f) t = 0;
+		if (t > 1.f) t = 1;
+		vec3 c = a + t * (b-a);
+		if(glm::distance(particlePosition, c)<radius)
+			particlePosition = c + radius * glm::normalize(particlePosition - c);
 	}
 
 	vec3 getPosition() {

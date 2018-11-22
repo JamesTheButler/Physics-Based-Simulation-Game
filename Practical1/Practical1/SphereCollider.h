@@ -9,6 +9,7 @@ private:
 	//--------------------------------------- Private member variables -------------------------------------------
 	vec3 position;
 	SCALAR radius;
+	const float OFFSET = 0.05f;
 
 public:
 	
@@ -23,7 +24,8 @@ public:
 	}
 
 	void handleCollision(vec3 & particlePosition) {
-		//write your code here...
+		if(glm::distance(particlePosition, position)< radius)
+			particlePosition = position + (radius+OFFSET) * glm::normalize(particlePosition - position);
 	}
 
 	vec3 getPosition() {
