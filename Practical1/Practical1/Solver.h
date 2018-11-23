@@ -5,10 +5,6 @@
 
 #include "Constraint.h"
 
-#include "SphereCollider.h"
-#include "CapsuleCollider.h"
-#include "PlaneCollider.h"
-
 enum IntegrationScheme { verlet };
 
 class Solver {

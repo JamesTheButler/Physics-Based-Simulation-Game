@@ -142,24 +142,15 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CapsuleCollider.h" />
-    <ClInclude Include="CapsuleRenderer.h" />
-    <ClInclude Include="Chain.h" />
     <ClInclude Include="Character.h" />
-    <ClInclude Include="Cloth.h" />
-    <ClInclude Include="ClothRenderer.h" />
     <ClInclude Include="Collider.h" />
     <ClInclude Include="Constraint.h" />
     <ClInclude Include="ParticleNetworkRenderer.h" />
-    <ClInclude Include="PlaneCollider.h" />
-    <ClInclude Include="PlaneRenderer.h" />
     <ClInclude Include="PositionBasedObject.h" />
-    <ClInclude Include="RagDoll.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Rope.h" />
     <ClInclude Include="ShaderUtility.h" />
     <ClInclude Include="Solver.h" />
-    <ClInclude Include="SphereCollider.h" />
-    <ClInclude Include="SphereRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

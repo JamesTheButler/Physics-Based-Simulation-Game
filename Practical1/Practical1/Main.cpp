@@ -14,16 +14,11 @@
 
 //#define DOUBLE_PRECISION			//Uncomment this line to switch to double precision
 
-#include "ClothRenderer.h"
 #include "ParticleNetworkRenderer.h"
-#include "SphereRenderer.h"
-#include "CapsuleRenderer.h"
-#include "PlaneRenderer.h"
 
-#include "Cloth.h"
-#include "RagDoll.h"
-#include "Chain.h"
+#include "Collider.h"
 #include "Character.h"
+#include "Rope.h"
 
 const SCALAR INITIAL_TIME_STEP_SIZE = 0.008;
 const SCALAR DRAG_CONSTANT = 0.0;
@@ -31,14 +26,12 @@ const int CONSTRAINT_ITERATIONS = 2;
 
 const float CHAR_SIZE = 0.5f;
 const float CHAR_ARM_LENGTH = 3.5f;
+const float ROPE_SIZE = 0.5f;
 
 const int SIMULATION_ITERATIONS_PER_FRAME = 3;
 
 Character * character;
-
-SphereCollider * sphereCollider;
-CapsuleCollider * capsuleCollider;
-PlaneCollider * planeCollider;
+Rope * rope;
 
 IntegrationScheme currentIntegrationScheme = verlet;
 
@@ -60,6 +53,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		switch (key) {
 		case GLFW_KEY_I:
 			character->reinitialize(currentIntegrationScheme);
+			rope->reinitialize(currentIntegrationScheme);
 			timer = 0.0f;
 			std::cout << "Reinitialized the simulation" << std::endl;
 			break;
@@ -81,9 +75,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			planeActive = false;
 			timer = 0.0f;
 			viewingAngle = capsuleActive ? 70.0f : 25.0f;
-			sphereCollider->setActive(sphereActive);
-			capsuleCollider->setActive(capsuleActive);
-			planeCollider->setActive(planeActive);
 			std::cout << (std::string("Turned capsule collider ") + (capsuleActive ? "on" : "off")).c_str() << std::endl;
 			break;
 		case GLFW_KEY_V:
@@ -92,9 +83,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			planeActive = false;
 			timer = 0.0f;
 			viewingAngle = sphereActive ? 70.0f : 25.0f;
-			sphereCollider->setActive(sphereActive);
-			capsuleCollider->setActive(capsuleActive);
-			planeCollider->setActive(planeActive);
 			std::cout << (std::string("Turned sphere collider ") + (sphereActive ? "on" : "off")).c_str() << std::endl;
 			break;
 		case GLFW_KEY_B:
@@ -103,9 +91,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			sphereActive = false;
 			timer = 0.0f;
 			viewingAngle = planeActive ? 70.0f : 25.0f;
-			sphereCollider->setActive(sphereActive);
-			capsuleCollider->setActive(capsuleActive);
-			planeCollider->setActive(planeActive);
 			std::cout << (std::string("Turned plane collider ") + (planeActive ? "on" : "off")).c_str() << std::endl;
 			windEnabled = true;
 			break;
@@ -113,45 +98,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-void renderCapsule(CapsuleCollider * capsuleCollider, glm::mat4 & perspectiveProjection, GLuint mvLocation, GLuint mvpLocation, GLuint normalMatrixLocation) {
-	//Render cylinder:
-	glm::mat4 modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
-	modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
-	modelViewMatrix = glm::translate(modelViewMatrix, capsuleCollider->getPosition());
-	glm::mat4 normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
-
-	glm::mat4 modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-	glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-	glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-	glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
-
-	capsuleCollider->renderer->draw();
-
-	//Render one half circle:
-	glm::mat4 temp = glm::mat4(modelViewMatrix);
-	modelViewMatrix = glm::translate(modelViewMatrix, glm::vec3(0, 0, -capsuleCollider->getLength() * 0.5f));
-	modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-	normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
-
-	modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-	glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-	glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-	glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
-
-	static_cast<CapsuleRenderer*>(capsuleCollider->renderer)->drawHemisphere();
-
-	//Render the other half circle:
-	modelViewMatrix = glm::translate(temp, glm::vec3(0, 0, capsuleCollider->getLength() * 0.5f));
-	modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(90.0f), glm::vec3(1, 0, 0));
-	normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
-
-	modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-	glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-	glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-	glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
-
-	static_cast<CapsuleRenderer*>(capsuleCollider->renderer)->drawHemisphere();
-}
 
 int main(void) {
 	GLFWwindow* window;
@@ -210,23 +156,13 @@ int main(void) {
 	const SCALAR dragConstant = DRAG_CONSTANT;
 	const int constraintIterations = CONSTRAINT_ITERATIONS;
 
-	std::vector<Collider *> colliders;
-	sphereCollider = new SphereCollider(vec3(7, -5, -0.125), 2.0, shaderProgramId);
-	sphereCollider->setActive(sphereActive);
-	colliders.push_back(sphereCollider);
-
-	capsuleCollider = new CapsuleCollider(vec3(7, -5, 0), 1.0f, 15.0f, vec3(0, 0, 1), shaderProgramId);
-	capsuleCollider->setActive(capsuleActive);
-	colliders.push_back(capsuleCollider);
-
-	planeCollider = new PlaneCollider(vec3(7, -5, -0.125), vec3(0, 1, 0), shaderProgramId);
-	planeCollider->setActive(planeActive);
-	colliders.push_back(planeCollider);
-
 	character = new Character(currentIntegrationScheme, shaderProgramId, CHAR_SIZE, CHAR_ARM_LENGTH);
 	character->solver->setConstraintIterations(constraintIterations);
 	character->solver->setDragConstant(dragConstant);
-	character->solver->setColliders(colliders);
+
+	rope = new Rope(currentIntegrationScheme, shaderProgramId, ROPE_SIZE, vec3(-5.f, 5.f, 0.f));
+	rope->solver->setConstraintIterations(constraintIterations);
+	rope->solver->setDragConstant(dragConstant);
 
 	std::cout << "Press i to reinitialize the simulation" << std::endl;
 	std::cout << "Press p to turn printing of elapsed time on or off" << std::endl;
@@ -240,22 +176,14 @@ int main(void) {
 		auto startTime = std::chrono::high_resolution_clock::now();
 
 		timer++;
-		//sphereCollider->addToPosition(vec3(0, 0, cos(ball_time * 0.016)) * 0.075f);
-		//capsuleCollider->addToPosition(vec3(0, 0, cos(ball_time * 0.016)) * 0.075f);
-
-		if (sphereActive)
-			sphereCollider->setPosition(vec3(7, -5, cos(timer / 50.0) * 7));
-
-		if (capsuleActive)
-			capsuleCollider->setPosition(vec3(7, -5, cos(timer / 100.0) * 9 + 5));
-
-		if (planeActive)
-			planeCollider->setPosition(vec3(7, -cos(timer / 100.0) * 5 - 10.5, 0));
 
 		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
 			character->addForce(vec3(0, -9.81, 0));
 			character->timeStep(timeStepSize, dragEnabled);
+
+			rope->addForce(vec3(0, -9.81, 0));
+			rope->timeStep(timeStepSize, dragEnabled);
 		}
 
 		//render:
@@ -285,38 +213,16 @@ int main(void) {
 			character->renderer->draw();
 		}
 
-		if (sphereActive) {
-			glm::mat4 modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
-			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
-			modelViewMatrix = glm::translate(modelViewMatrix, sphereCollider->getPosition());
-			glm::mat4 normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+		modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0, -5));
+		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
 
-			glm::mat4 modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+		modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+		glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
 
-			sphereCollider->renderer->draw();
-		}
-
-		if (capsuleActive)
-			renderCapsule(capsuleCollider, perspectiveProjection, mvLocation, mvpLocation, normalMatrixLocation);
+		rope->renderer->draw();
 		
-		if (planeActive) {
-			glm::mat4 modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
-			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
-			modelViewMatrix = glm::translate(modelViewMatrix, planeCollider->getPosition());
-			glm::mat4 normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
-
-			glm::mat4 modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
-
-			planeCollider->renderer->draw();
-		}
-
-
 		//Swap front and back buffers 
 		glfwSwapBuffers(window);
 
@@ -335,6 +241,7 @@ int main(void) {
 	}
 
 	delete character;
+	delete rope;
 
 	glfwTerminate();
 	return 0;
