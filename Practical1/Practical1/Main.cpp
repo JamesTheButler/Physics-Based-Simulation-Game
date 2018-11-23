@@ -23,6 +23,7 @@
 #include "Cloth.h"
 #include "RagDoll.h"
 #include "Chain.h"
+#include "Character.h"
 
 const SCALAR INITIAL_TIME_STEP_SIZE = 0.008;
 const SCALAR DRAG_CONSTANT = 0.0;
@@ -30,9 +31,10 @@ const int CONSTRAINT_ITERATIONS = 2;
 
 const int SIMULATION_ITERATIONS_PER_FRAME = 3;
 
-Cloth * cloth;
+/*Cloth * cloth;
 RagDoll * ragDoll;
-Chain * chain;
+Chain * chain;*/
+Character * character;
 
 SphereCollider * sphereCollider;
 CapsuleCollider * capsuleCollider;
@@ -43,9 +45,10 @@ IntegrationScheme currentIntegrationScheme = verlet;
 bool windEnabled = false;
 bool renderParticlesAndConstraints = false;
 bool printElapsedTime = false;
-bool drawCloth = true;
+/*bool drawCloth = true;
 bool drawChain = false;
-bool drawRagDoll = false;
+bool drawRagDoll = false;*/
+bool drawCharacter = true;
 bool dragEnabled = true;
 
 bool capsuleActive = false;
@@ -58,7 +61,7 @@ float viewingAngle = 25.0f;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
-		case GLFW_KEY_1:
+		/*case GLFW_KEY_1:
 			drawCloth = true;
 			drawChain = false;
 			drawRagDoll = false;
@@ -82,10 +85,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			drawRagDoll = true;
 			std::cout << "Switched to drawing all objects" << std::endl;
 			break;
-		case GLFW_KEY_I:
-			cloth->reinitialize(currentIntegrationScheme);
-			ragDoll->reinitialize(currentIntegrationScheme);
-			chain->reinitialize(currentIntegrationScheme);
+		*/case GLFW_KEY_I:
+			character->reinitialize(currentIntegrationScheme);
 			timer = 0.0f;
 			std::cout << "Reinitialized the simulation" << std::endl;
 			break;
@@ -93,11 +94,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			windEnabled = !windEnabled;
 			std::cout << (std::string("Turned wind ") + (windEnabled ? "on" : "off")).c_str() << std::endl;
 			break;
-		case GLFW_KEY_R:
+		/*case GLFW_KEY_R:
 			renderParticlesAndConstraints = !renderParticlesAndConstraints;
 			static_cast<ClothRenderer*>(cloth->renderer)->setRenderParticlesAndConstraintsEnabled(renderParticlesAndConstraints);
 			std::cout << "Switched rendering mode " << std::endl;
-			break;
+			break;*/
 		case GLFW_KEY_P:
 			printElapsedTime = !printElapsedTime;
 			std::cout << "Switched printing of elapsed time" << std::endl;
@@ -254,7 +255,7 @@ int main(void) {
 	planeCollider->setActive(planeActive);
 	colliders.push_back(planeCollider);
 
-	cloth = new Cloth(14, 10, 55, 45, currentIntegrationScheme, shaderProgramId);
+	/*cloth = new Cloth(14, 10, 55, 45, currentIntegrationScheme, shaderProgramId);
 	cloth->solver->setConstraintIterations(constraintIterations);
 	cloth->solver->setDragConstant(dragConstant);
 	cloth->solver->setColliders(colliders);
@@ -262,16 +263,21 @@ int main(void) {
 	chain = new Chain(currentIntegrationScheme, shaderProgramId);
 	chain->solver->setConstraintIterations(constraintIterations);
 	chain->solver->setDragConstant(dragConstant);
-	chain->solver->setColliders(colliders);
+	chain->solver->setColliders(colliders);*/
 
-	ragDoll = new RagDoll(currentIntegrationScheme, shaderProgramId);
+	character = new Character(currentIntegrationScheme, shaderProgramId, 1.0f);
+	character->solver->setConstraintIterations(constraintIterations);
+	character->solver->setDragConstant(dragConstant);
+	character->solver->setColliders(colliders);
+
+	/*ragDoll = new RagDoll(currentIntegrationScheme, shaderProgramId);
 	ragDoll->solver->setConstraintIterations(constraintIterations);
 	ragDoll->solver->setDragConstant(dragConstant);
-	ragDoll->solver->setColliders(colliders);
+	ragDoll->solver->setColliders(colliders);*/
 
-	std::cout << "Press 1 to draw cloth, 2 to draw chain, 3 to draw rag doll, and press a to render all of them" << std::endl;
+	/*std::cout << "Press 1 to draw cloth, 2 to draw chain, 3 to draw rag doll, and press a to render all of them" << std::endl;
 	std::cout << "Press space to switch wind on/off" << std::endl;
-	std::cout << "Press r to switch between mesh rendering and particle and constraints rendering" << std::endl;
+	std::cout << "Press r to switch between mesh rendering and particle and constraints rendering" << std::endl;*/
 	std::cout << "Press i to reinitialize the simulation" << std::endl;
 	std::cout << "Press p to turn printing of elapsed time on or off" << std::endl;
 	std::cout << "Press c to turn capsule collider on/off" << std::endl;
@@ -298,7 +304,7 @@ int main(void) {
 
 		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
-			cloth->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
+			/*cloth->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
 			if (windEnabled)
 				cloth->windForce(vec3(8.0, 0, 7.0)); // generate some wind each frame
 			cloth->timeStep(timeStepSize, dragEnabled); // calculate the particle positions of the current frame
@@ -308,6 +314,10 @@ int main(void) {
 
 			ragDoll->addForce(vec3(0, -9.81, 0)); // add gravity each frame, pointing downwards
 			ragDoll->timeStep(timeStepSize, dragEnabled); // calculate the particle positions of the current frame
+			*/
+			//character->addForce(vec3(0, -9.81, 0));
+			//character->timeStep(timeStepSize, dragEnabled);
+
 		}
 
 		//render:
@@ -325,7 +335,7 @@ int main(void) {
 				static_cast<float>(height), 1.0f, 5000.0f);
 		}
 
-		if (drawCloth) {
+		/*if (drawCloth) {
 			modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
 			modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
 			normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
@@ -361,6 +371,18 @@ int main(void) {
 			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
 
 			ragDoll->renderer->draw();
+		}*/
+
+		if (drawCharacter) {
+			modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0, -5));
+			normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+			modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+			character->renderer->draw();
 		}
 
 		if (sphereActive) {
@@ -412,9 +434,10 @@ int main(void) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(16) - d);
 	}
 
-	delete cloth;
+	/*delete cloth;
 	delete chain;
-	delete ragDoll;
+	delete ragDoll;*/
+	delete character;
 
 	glfwTerminate();
 	return 0;

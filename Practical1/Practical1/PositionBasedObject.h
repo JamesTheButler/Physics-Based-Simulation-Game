@@ -56,6 +56,7 @@ protected:
 		constraints.push_back(Constraint(p1, p2, positions, isMovables));
 	}
 
+
 public:
 
 	//--------------------------------------- Public member variables --------------------------------------------

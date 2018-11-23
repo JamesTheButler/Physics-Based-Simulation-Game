@@ -145,6 +145,7 @@
     <ClInclude Include="CapsuleCollider.h" />
     <ClInclude Include="CapsuleRenderer.h" />
     <ClInclude Include="Chain.h" />
+    <ClInclude Include="Character.h" />
     <ClInclude Include="Cloth.h" />
     <ClInclude Include="ClothRenderer.h" />
     <ClInclude Include="Collider.h" />
