@@ -10,6 +10,7 @@ private:
 	std::vector<vec3> normals;
 	int numberOfParticles;
 	float size;
+	float armLength;
 
 	//--------------------------------------- Private methods ----------------------------------------------------
 	void initializePositions() {
@@ -24,15 +25,14 @@ private:
 		positions[6] = vec3(-.6f*size, -.6f*size, 0.0);		// G
 		positions[7] = vec3(-.6f*size, .6f*size, 0.0);		// H
 		//arms
-		positions[8] = vec3(0.0, 2 * size, 0.0);
-		positions[9] = vec3(2 * size, 0.0, 0.0);
-		positions[10] = vec3(0.0, -2 * size, 0.0);
-		positions[11] = vec3(-2 * size, 0.0, 0.0);
-		//center
-		//positions[12] = vec3(0.0, 0.0, 0.0);
+		positions[8] = vec3(0.0, armLength * size, 0.0);
+		positions[9] = vec3(armLength * size, 0.0, 0.0);
+		positions[10] = vec3(0.0, -armLength * size, 0.0);
+		positions[11] = vec3(-armLength * size, 0.0, 0.0);
 	}
 
 	void initializeConstraints() {
+		// A,B,C,D
 		makeConstraint(0, 1);
 		makeConstraint(0, 2);
 		makeConstraint(0, 3);
@@ -41,40 +41,42 @@ private:
 		makeConstraint(1, 2);
 		makeConstraint(1, 3);
 		makeConstraint(1, 4);
-		makeConstraint(1, 7);
+		makeConstraint(1, 5);
 		makeConstraint(2, 3);
 		makeConstraint(2, 5);
 		makeConstraint(2, 6);
 		makeConstraint(3, 6);
 		makeConstraint(3, 7);
-		
+		// E, F, G, H
 		makeConstraint(4, 5);
 		makeConstraint(4, 6);
 		makeConstraint(4, 7);
 		makeConstraint(5, 6);
 		makeConstraint(5, 7);
 		makeConstraint(6, 7);
+		//arms
+		makeConstraint(8, 0);
+		makeConstraint(8, 4);
+		makeConstraint(8, 7);
+		makeConstraint(9, 1);
+		makeConstraint(9, 4);
+		makeConstraint(9, 5);
+		makeConstraint(10, 2);
+		makeConstraint(10, 5);
+		makeConstraint(10, 6);
+		makeConstraint(11, 3);
+		makeConstraint(11, 6);
+		makeConstraint(11, 7);
 
-		//arm constraints
-		const static int aConstraints[] = { 0,4,7 };
-		const static int bConstraints[] = { 1,4,5 };
-		const static int cConstraints[] = { 2,5,6 };
-		const static int dConstraints[] = { 1,2,3,6,7 };
-		//makeContraints(8, aConstraints);
-		//makeContraints(9, bConstraints);
-		//makeContraints(10, cConstraints);
-		//makeContraints(11, dConstraints);
-
-		isMovables[1] = false;
 	}
 
 public:
-
 	//--------------------------------------- Public methods -----------------------------------------------------
-	Character(IntegrationScheme integrationScheme, GLhandleARB shaderProgramId, float size) :
+	Character(IntegrationScheme integrationScheme, GLhandleARB shaderProgramId, float size, float armLength) :
 		PositionBasedObject() {
 		this->size = size;
-		numberOfParticles = 16;
+		this->armLength = armLength;
+		numberOfParticles = 12;
 
 		positions.resize(numberOfParticles);
 		oldPositions.resize(numberOfParticles);
@@ -92,8 +94,6 @@ public:
 			oldPositions[i] = positions[i];
 		}
 		initializeConstraints();
-
-		isMovables[0] = false;		//Set the top particle be pinned/unmovable.
 
 		normals.resize(numberOfParticles, vec3(0, 0, 0));
 		renderer->setupOpenGLBuffers();
