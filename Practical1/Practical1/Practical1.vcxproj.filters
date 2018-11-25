@@ -47,5 +47,14 @@
     <ClInclude Include="Rope.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PlaneCollider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PlaneRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RopeManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

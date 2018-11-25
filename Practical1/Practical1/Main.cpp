@@ -16,37 +16,43 @@
 
 #include "ParticleNetworkRenderer.h"
 
+#include "PlaneRenderer.h"
+#include "PlaneCollider.h"
 #include "Collider.h"
 #include "Character.h"
-#include "Rope.h"
+#include "RopeManager.h"
 
 const SCALAR INITIAL_TIME_STEP_SIZE = 0.008;
 const SCALAR DRAG_CONSTANT = 0.0;
 const int CONSTRAINT_ITERATIONS = 2;
 
-const float CHAR_SIZE = 0.5f;
+const float CHAR_SIZE = 0.1f;
 const float CHAR_ARM_LENGTH = 3.5f;
-const float ROPE_SIZE = 0.5f;
-
+const float ROPE_SIZE = 0.25f;
+const float GRAVITY = -4.f;
 const int SIMULATION_ITERATIONS_PER_FRAME = 3;
 
 Character * character;
 Rope * rope;
+RopeManager * ropeMgr;
+PlaneCollider * topPlaneCollider;
+PlaneCollider * bottomPlaneCollider;
 
 IntegrationScheme currentIntegrationScheme = verlet;
 
 bool windEnabled = false;
 bool renderParticlesAndConstraints = false;
 bool printElapsedTime = false;
-bool drawCharacter = true;
 bool dragEnabled = true;
-
-bool capsuleActive = false;
-bool sphereActive = false;
-bool planeActive = false;
-
+bool isPlayerGravityEnabled = false;
 float timer = 0.0f;
 float viewingAngle = 25.0f;
+
+
+
+void startGame() {
+	isPlayerGravityEnabled = true;
+}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
@@ -69,35 +75,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			dragEnabled = !dragEnabled;
 			std::cout << (std::string("Turned drag ") + (dragEnabled ? "on" : "off")).c_str() << std::endl;
 			break;
-		case GLFW_KEY_C:
-			capsuleActive = !capsuleActive;
-			sphereActive = false;
-			planeActive = false;
-			timer = 0.0f;
-			viewingAngle = capsuleActive ? 70.0f : 25.0f;
-			std::cout << (std::string("Turned capsule collider ") + (capsuleActive ? "on" : "off")).c_str() << std::endl;
-			break;
-		case GLFW_KEY_V:
-			sphereActive = !sphereActive;
-			capsuleActive = false;
-			planeActive = false;
-			timer = 0.0f;
-			viewingAngle = sphereActive ? 70.0f : 25.0f;
-			std::cout << (std::string("Turned sphere collider ") + (sphereActive ? "on" : "off")).c_str() << std::endl;
-			break;
-		case GLFW_KEY_B:
-			planeActive = !planeActive;
-			capsuleActive = false;
-			sphereActive = false;
-			timer = 0.0f;
-			viewingAngle = planeActive ? 70.0f : 25.0f;
-			std::cout << (std::string("Turned plane collider ") + (planeActive ? "on" : "off")).c_str() << std::endl;
-			windEnabled = true;
-			break;
+		case GLFW_KEY_1:
+			startGame();
 		}
+
 	}
 }
-
 
 int main(void) {
 	GLFWwindow* window;
@@ -156,13 +139,25 @@ int main(void) {
 	const SCALAR dragConstant = DRAG_CONSTANT;
 	const int constraintIterations = CONSTRAINT_ITERATIONS;
 
-	character = new Character(currentIntegrationScheme, shaderProgramId, CHAR_SIZE, CHAR_ARM_LENGTH);
+	character = new Character(currentIntegrationScheme, shaderProgramId, CHAR_SIZE, CHAR_ARM_LENGTH, vec3(3,4,0));
 	character->solver->setConstraintIterations(constraintIterations);
 	character->solver->setDragConstant(dragConstant);
 
-	rope = new Rope(currentIntegrationScheme, shaderProgramId, ROPE_SIZE, vec3(-5.f, 5.f, 0.f));
+	std::vector<Collider *> colliders;
+
+	/*topPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, -1, 0), shaderProgramId);
+	topPlaneCollider->setActive(true);
+	colliders.push_back(topPlaneCollider);
+
+	bottomPlaneCollider = new PlaneCollider(vec3(0, -1, 0), vec3(0, 1, 0), shaderProgramId);
+	bottomPlaneCollider->setActive(true);
+	colliders.push_back(bottomPlaneCollider);*/
+
+	/*rope = new Rope(currentIntegrationScheme, shaderProgramId, ROPE_SIZE, vec3(-4.f, 4.f, 0.f));
 	rope->solver->setConstraintIterations(constraintIterations);
-	rope->solver->setDragConstant(dragConstant);
+	rope->solver->setDragConstant(dragConstant);*/
+
+	ropeMgr = new RopeManager( shaderProgramId, constraintIterations, dragConstant, ROPE_SIZE);
 
 	std::cout << "Press i to reinitialize the simulation" << std::endl;
 	std::cout << "Press p to turn printing of elapsed time on or off" << std::endl;
@@ -179,11 +174,12 @@ int main(void) {
 
 		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
-			character->addForce(vec3(0, -9.81, 0));
-			character->timeStep(timeStepSize, dragEnabled);
+			if (isPlayerGravityEnabled) {
+				character->addForce(vec3(0, GRAVITY, 0));
+				character->timeStep(timeStepSize, dragEnabled);
+			}
 
-			rope->addForce(vec3(0, -9.81, 0));
-			rope->timeStep(timeStepSize, dragEnabled);
+			ropeMgr->timeStep(GRAVITY, timeStepSize);
 		}
 
 		//render:
@@ -201,18 +197,7 @@ int main(void) {
 				static_cast<float>(height), 1.0f, 5000.0f);
 		}
 
-		if (drawCharacter) {
-			modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0, -5));
-			normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
-
-			modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-			glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-			glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
-
-			character->renderer->draw();
-		}
-
+		//draw rope
 		modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0, -5));
 		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
 
@@ -221,8 +206,37 @@ int main(void) {
 		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
 
-		rope->renderer->draw();
+		ropeMgr->draw();
+		character->renderer->draw();
+
 		
+		//draw planes
+		//TODO: put into own function
+		//top
+		/*modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
+		modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
+		modelViewMatrix = glm::translate(modelViewMatrix, topPlaneCollider->getPosition());
+		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+		modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+		glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+		topPlaneCollider->renderer->draw();
+		//bottom
+		modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
+		modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
+		modelViewMatrix = glm::translate(modelViewMatrix, bottomPlaneCollider->getPosition());
+		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+
+		modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
+		glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
+
+		bottomPlaneCollider->renderer->draw();*/
+
 		//Swap front and back buffers 
 		glfwSwapBuffers(window);
 
@@ -241,8 +255,12 @@ int main(void) {
 	}
 
 	delete character;
-	delete rope;
+	ropeMgr->deleteRopes();
 
 	glfwTerminate();
 	return 0;
+
+
 }
+
+ 

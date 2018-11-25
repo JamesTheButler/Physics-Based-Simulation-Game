@@ -11,6 +11,7 @@ private:
 	int numberOfParticles;
 	float size;
 	float armLength;
+	vec3 startCenter;
 
 	//--------------------------------------- Private methods ----------------------------------------------------
 	void initializePositions() {
@@ -19,16 +20,20 @@ private:
 		positions[1] = vec3(size, 0.0, 0.0);			// B
 		positions[2] = vec3(0.0, -size, 0.0);			// C
 		positions[3] = vec3(-size, 0.0, 0.0);			// D
-
+					 
 		positions[4] = vec3(.6f*size, .6f*size, 0.0);		// E
 		positions[5] = vec3(.6f*size, -.6f*size, 0.0);		// F
 		positions[6] = vec3(-.6f*size, -.6f*size, 0.0);		// G
 		positions[7] = vec3(-.6f*size, .6f*size, 0.0);		// H
-		//arms
+		//arms		 
 		positions[8] = vec3(0.0, armLength * size, 0.0);
 		positions[9] = vec3(armLength * size, 0.0, 0.0);
 		positions[10] = vec3(0.0, -armLength * size, 0.0);
 		positions[11] = vec3(-armLength * size, 0.0, 0.0);
+		
+		for (int i = 0; i < positions.size(); i++) {
+			positions[i] += startCenter;
+		}
 	}
 
 	void initializeConstraints() {
@@ -72,10 +77,11 @@ private:
 
 public:
 	//--------------------------------------- Public methods -----------------------------------------------------
-	Character(IntegrationScheme integrationScheme, GLhandleARB shaderProgramId, float size, float armLength) :
+	Character(IntegrationScheme integrationScheme, GLhandleARB shaderProgramId, float size, float armLength, vec3 startCenter) :
 		PositionBasedObject() {
 		this->size = size;
 		this->armLength = armLength;
+		this->startCenter = startCenter;
 		numberOfParticles = 12;
 
 		positions.resize(numberOfParticles);

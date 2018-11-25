@@ -2,20 +2,21 @@
 #pragma once
 
 #include "PositionBasedObject.h"
+#include <ctime>
 
 class Rope : public PositionBasedObject {
 private:
 
-	//--------------------------------------- Private member variables -------------------------------------------
 	std::vector<vec3> normals;
 	int numberOfParticles;
 	vec3 anchor;
 	float size;
 
-	//--------------------------------------- Private methods ----------------------------------------------------
-	void initializePositions() {
-		for(int i=0; i<numberOfParticles; i++)
-			positions[i] = anchor + vec3((float)i*size, 0.f, 0.f);
+	//TODO: radnom particle displacement
+	void initializePositions(float angle) {
+		for (int i = 0; i < numberOfParticles; i++) {
+			positions[i] = anchor + vec3((float)i*(sin(angle)*size), i*-cos(angle)*size, 0.f);
+		}
 		isMovables[0] = false;
 	}
 
@@ -25,8 +26,7 @@ private:
 	}
 
 public:
-	//--------------------------------------- Public methods -----------------------------------------------------
-	Rope(IntegrationScheme integrationScheme, GLhandleARB shaderProgramId, float size, vec3 anchor) :
+	Rope(IntegrationScheme integrationScheme, GLhandleARB shaderProgramId, float size, vec3 anchor, float angle) :
 		PositionBasedObject() {
 		this->size = size;
 		this->anchor = anchor;
@@ -43,7 +43,7 @@ public:
 		solver = new Solver(integrationScheme, positions, oldPositions, velocities, accelerations, masses, isMovables, constraints);
 		renderer = new ParticleNetworkRenderer(shaderProgramId, positions, constraints, numberOfParticles);
 
-		initializePositions();
+		initializePositions(angle);
 		for (int i = 0; i < positions.size(); i++) {
 			oldPositions[i] = positions[i];
 		}
@@ -54,8 +54,8 @@ public:
 		renderer->setNormals(normals);
 	}
 
-	void reinitialize(IntegrationScheme integrationScheme) {
-		solver->setIntegrationScheme(integrationScheme);
+	void reinitialize(IntegrationScheme currentIntegrationScheme) {
+		solver->setIntegrationScheme(currentIntegrationScheme);
 		solver->setToFirstTimeStep();
 
 		std::fill(accelerations.begin(), accelerations.end(), vec3(0, 0, 0));
@@ -63,7 +63,7 @@ public:
 
 		oldPositions.resize(numberOfParticles);
 
-		initializePositions();
+		initializePositions(0);
 
 		for (int i = 0; i < positions.size(); i++) {
 			oldPositions[i] = positions[i];
