@@ -69,4 +69,12 @@ public:
 			oldPositions[i] = positions[i];
 		}
 	}
+
+	std::vector<vec3>* getPositions() {
+		return &positions;
+	}
+
+	std::vector<bool>* getIsMovables() {
+		return &isMovables;
+	}
 };

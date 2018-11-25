@@ -78,7 +78,7 @@ public:
 			}
 		}
 
-		//Constraint solving:
+		//Constraint solving: TODO: connectors
 		for (int i = 0; i < constraintIterations; i++) {
 			for (Constraint constraint : constraints) {
 				constraint.solveConstraints();

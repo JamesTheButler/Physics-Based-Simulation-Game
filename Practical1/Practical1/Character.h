@@ -12,6 +12,7 @@ private:
 	float size;
 	float armLength;
 	vec3 startCenter;
+	std::vector<bool> isArmSticky;
 
 	//--------------------------------------- Private methods ----------------------------------------------------
 	void initializePositions() {
@@ -101,9 +102,19 @@ public:
 		}
 		initializeConstraints();
 
+		isArmSticky.resize(4, false);
+
 		normals.resize(numberOfParticles, vec3(0, 0, 0));
 		renderer->setupOpenGLBuffers();
 		renderer->setNormals(normals);
+	}
+
+	std::vector<vec3> getStickyArms() {
+		std::vector<vec3> stickyArms;
+		for (int i = 0; i <= 3; i++)
+			if (isArmSticky[i])
+				stickyArms.push_back(positions[i + 8]);
+		return stickyArms;
 	}
 
 	void reinitialize(IntegrationScheme integrationScheme) {
@@ -120,5 +131,13 @@ public:
 		for (int i = 0; i < positions.size(); i++) {
 			oldPositions[i] = positions[i];
 		}
+	}
+
+	void setArmSticky(int id, bool isSticky) {
+		isArmSticky[id] = isSticky;
+	}
+
+	void setAllArmsSticky(bool isSticky) {
+		isArmSticky.resize(4, isSticky);
 	}
 };

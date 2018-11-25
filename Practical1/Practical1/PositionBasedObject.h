@@ -55,6 +55,10 @@ protected:
 	inline void makeConstraint(int p1, int p2) {
 		constraints.push_back(Constraint(p1, p2, positions, isMovables));
 	}
+	//TODO
+	//inline void makeConnectorConstraint(int p1, int p2) {
+	//	constraints.push_back(Constraint(p1, p2, positions, isMovables));
+	//}
 
 
 public:

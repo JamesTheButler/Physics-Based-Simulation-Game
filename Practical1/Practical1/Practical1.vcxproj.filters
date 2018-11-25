@@ -56,5 +56,8 @@
     <ClInclude Include="RopeManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConnectorConstraint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

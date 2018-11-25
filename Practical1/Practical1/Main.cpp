@@ -19,6 +19,7 @@
 #include "PlaneRenderer.h"
 #include "PlaneCollider.h"
 #include "Collider.h"
+#include "ConnectorConstraint.h"
 #include "Character.h"
 #include "RopeManager.h"
 
@@ -48,6 +49,11 @@ bool isPlayerGravityEnabled = false;
 float timer = 0.0f;
 float viewingAngle = 25.0f;
 
+struct Particle {
+	int id;
+	std::vector<vec3> * positions;
+	std::vector<bool> * isMovables;
+};
 
 
 void startGame() {
@@ -142,7 +148,7 @@ int main(void) {
 	character = new Character(currentIntegrationScheme, shaderProgramId, CHAR_SIZE, CHAR_ARM_LENGTH, vec3(3,4,0));
 	character->solver->setConstraintIterations(constraintIterations);
 	character->solver->setDragConstant(dragConstant);
-
+	
 	std::vector<Collider *> colliders;
 
 	/*topPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, -1, 0), shaderProgramId);
@@ -180,6 +186,8 @@ int main(void) {
 			}
 
 			ropeMgr->timeStep(GRAVITY, timeStepSize);
+
+
 		}
 
 		//render:

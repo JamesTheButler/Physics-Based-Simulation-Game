@@ -17,6 +17,25 @@ public:
 		}
 	}
 	
+	Particle getClosestParticle(vec3 particle, float threshold) {
+		Particle closestParticle;
+		float closestDistance = 10.f;
+		for (Rope* rope : ropes) {
+			std::vector<vec3> * ropePositions = rope->getPositions();
+			std::vector<bool> * ropeIsMovables = rope->getIsMovables();
+			int i = 0;
+			for (vec3 pos : *ropePositions) {
+				float dist = glm::distance(particle, pos);
+				if (dist < threshold) {
+					if (dist < closestDistance) {
+						closestParticle = { i, ropePositions , ropeIsMovables };
+					}
+				}
+			}
+		}
+		return closestParticle;
+	}
+
 	void timeStep(float gravity, float deltaTime){
 		for (Rope* rope : ropes) {
 			rope->addForce(vec3(0, gravity, 0));
@@ -36,4 +55,6 @@ public:
 		}
 		delete this;
 	}
+
+
 };
