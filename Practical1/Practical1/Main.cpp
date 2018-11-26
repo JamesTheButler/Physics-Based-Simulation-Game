@@ -46,6 +46,7 @@ bool renderParticlesAndConstraints = false;
 bool printElapsedTime = false;
 bool dragEnabled = true;
 bool isPlayerGravityEnabled = false;
+bool areArmsSticky = false;
 float timer = 0.0f;
 float viewingAngle = 25.0f;
 
@@ -83,8 +84,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			break;
 		case GLFW_KEY_1:
 			startGame();
+			break;
+		case GLFW_KEY_2:
+			areArmsSticky=!areArmsSticky;
+			break;
 		}
-
 	}
 }
 
@@ -159,10 +163,6 @@ int main(void) {
 	bottomPlaneCollider->setActive(true);
 	colliders.push_back(bottomPlaneCollider);*/
 
-	/*rope = new Rope(currentIntegrationScheme, shaderProgramId, ROPE_SIZE, vec3(-4.f, 4.f, 0.f));
-	rope->solver->setConstraintIterations(constraintIterations);
-	rope->solver->setDragConstant(dragConstant);*/
-
 	ropeMgr = new RopeManager( shaderProgramId, constraintIterations, dragConstant, ROPE_SIZE);
 
 	std::cout << "Press i to reinitialize the simulation" << std::endl;
@@ -177,6 +177,16 @@ int main(void) {
 		auto startTime = std::chrono::high_resolution_clock::now();
 
 		timer++;
+		if (areArmsSticky)
+		{
+			//check each arm for closest particle
+			for (int i = 0; i < 4; i++) {
+			/*	Particle closestParticle = ropeMgr->getClosestParticle(arm[i], 0.01f);
+				if(closestParticle.id!=-1)
+					makeConnectorConstraint();
+			*/}
+		}
+
 
 		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
@@ -186,9 +196,8 @@ int main(void) {
 			}
 
 			ropeMgr->timeStep(GRAVITY, timeStepSize);
-
-
 		}
+		//deleteAllConnectorConstraints();
 
 		//render:
 		glfwGetFramebufferSize(window, &width, &height);

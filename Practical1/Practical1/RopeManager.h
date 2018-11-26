@@ -19,6 +19,8 @@ public:
 	
 	Particle getClosestParticle(vec3 particle, float threshold) {
 		Particle closestParticle;
+		closestParticle.id = -1;
+
 		float closestDistance = 10.f;
 		for (Rope* rope : ropes) {
 			std::vector<vec3> * ropePositions = rope->getPositions();
