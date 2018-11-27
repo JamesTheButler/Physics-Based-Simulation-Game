@@ -145,6 +145,8 @@
     <ClInclude Include="Character.h" />
     <ClInclude Include="Collider.h" />
     <ClInclude Include="Constraint.h" />
+    <ClInclude Include="AABBCollider.h" />
+    <ClInclude Include="AABBRenderer.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleNetworkRenderer.h" />
     <ClInclude Include="PlaneCollider.h" />

@@ -18,6 +18,8 @@
 #include "Particle.h"
 #include "PlaneRenderer.h"
 #include "PlaneCollider.h"
+#include "AABBRenderer.h"
+#include "AABBCollider.h"
 #include "Collider.h"
 #include "RopeManager.h"
 #include "Character.h"
@@ -31,13 +33,16 @@ const float CHAR_ARM_LENGTH = 3.5f;
 const float ROPE_SIZE = 0.25f;
 const float GRAVITY = -4.f;
 const int SIMULATION_ITERATIONS_PER_FRAME = 3;
-const float CONNECTION_THRESHOLD = .8f;
+const float CONNECTION_THRESHOLD = .1f;
 
 Character * character;
 Rope * rope;
 RopeManager * ropeMgr;
-PlaneCollider * topPlaneCollider;
+PlaneCollider * leftPlaneCollider;
+PlaneCollider * rightPlaneCollider;
 PlaneCollider * bottomPlaneCollider;
+AABBCollider * destinationBox;
+AABBCollider * obstacleBox;
 
 IntegrationScheme currentIntegrationScheme = verlet;
 
@@ -57,12 +62,12 @@ void startGame() {
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
-		case GLFW_KEY_I:
+		/*case GLFW_KEY_I:
 			character->reinitialize(currentIntegrationScheme);
 			rope->reinitialize(currentIntegrationScheme);
 			timer = 0.0f;
 			std::cout << "Reinitialized the simulation" << std::endl;
-			break;
+			break;*/
 		case GLFW_KEY_SPACE:
 			windEnabled = !windEnabled;
 			std::cout << (std::string("Turned wind ") + (windEnabled ? "on" : "off")).c_str() << std::endl;
@@ -147,32 +152,43 @@ int main(void) {
 
 	std::vector<Collider *> colliders;
 
-	character = new Character(currentIntegrationScheme, shaderProgramId, CHAR_SIZE, CHAR_ARM_LENGTH, vec3(3,4,0));
-	character->solver->setConstraintIterations(constraintIterations);
-	character->solver->setDragConstant(dragConstant);
-	character->solver->setColliders(colliders);
+	leftPlaneCollider = new PlaneCollider(vec3(-11.25, 0, 0), vec3(1, 0, 0), shaderProgramId);
+	leftPlaneCollider->setActive(true);
+	colliders.push_back(leftPlaneCollider);
 
-	topPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, -1, 0), shaderProgramId);
-	topPlaneCollider->setActive(true);
-	colliders.push_back(topPlaneCollider);
+	rightPlaneCollider = new PlaneCollider(vec3(5, 0, 0), vec3(-1, 0, 0), shaderProgramId);
+	rightPlaneCollider->setActive(true);
+	colliders.push_back(rightPlaneCollider);
 
 	bottomPlaneCollider = new PlaneCollider(vec3(3, 0, 0), vec3(0, 1, 0), shaderProgramId);
 	bottomPlaneCollider->setActive(true);
 	colliders.push_back(bottomPlaneCollider);
 
+	destinationBox = new AABBCollider(vec3(-9.25f, 0.5f, 0), 4, 1.1f, shaderProgramId);
+	destinationBox->setActive(true);
+	colliders.push_back(destinationBox);
+
+	obstacleBox = new AABBCollider(vec3(-3.5f, 1, 0), 0.6f, 2.1f, shaderProgramId);
+	obstacleBox->setActive(true);
+	colliders.push_back(obstacleBox);
+
+	character = new Character(currentIntegrationScheme, shaderProgramId, CHAR_SIZE, CHAR_ARM_LENGTH, vec3(3,4,0));
+	character->solver->setConstraintIterations(constraintIterations);
+	character->solver->setDragConstant(dragConstant);
+	character->solver->setColliders(colliders);
+
 	ropeMgr = new RopeManager( shaderProgramId, constraintIterations, dragConstant, ROPE_SIZE);
 
-	std::cout << "Press i to reinitialize the simulation" << std::endl;
-	std::cout << "Press p to turn printing of elapsed time on or off" << std::endl;
-	std::cout << "Press c to turn capsule collider on/off" << std::endl;
-	std::cout << "Press v to turn sphere collider on/off" << std::endl;
-	std::cout << "Press b to turn plane collider on/off" << std::endl;
+	std::cout << "Press 1 to start the game." << std::endl;
+	std::cout << "Press 2 to make arms sticky/unsticky." << std::endl;
 
 	//Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window)) {
 		auto startTime = std::chrono::high_resolution_clock::now();
 
 		timer++;
+
+		// enable connectors
 		if (areArmsSticky)
 			character->applyConnectorConstraints(ropeMgr, CONNECTION_THRESHOLD);
 
@@ -184,7 +200,9 @@ int main(void) {
 			}
 			ropeMgr->timeStep(GRAVITY, timeStepSize);
 		}
-		character->removeConnectorConstraints();
+		// delete all connectors if arms are not sticky
+		if(!areArmsSticky)
+			character->removeConnectorConstraints();
 
 		//render:
 		glfwGetFramebufferSize(window, &width, &height);
@@ -201,7 +219,7 @@ int main(void) {
 				static_cast<float>(height), 1.0f, 5000.0f);
 		}
 
-		//draw rope
+		//set up 2D rendering
 		modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0, -5));
 		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
 
@@ -210,36 +228,17 @@ int main(void) {
 		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
 
+		//draw rope
 		ropeMgr->draw();
 		character->renderer->draw();
-
 		
-		//draw planes
-		//TODO: put into own function
-		//top
-		/*modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
-		modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
-		modelViewMatrix = glm::translate(modelViewMatrix, topPlaneCollider->getPosition());
-		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
+		//draw planes + boxes
+		leftPlaneCollider->renderer->draw();
+		rightPlaneCollider->renderer->draw();
+		bottomPlaneCollider->renderer->draw();
 
-		modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-		glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
-
-		topPlaneCollider->renderer->draw();
-		//bottom
-		modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-6.5f, 6, -10));
-		modelViewMatrix = glm::rotate(modelViewMatrix, glm::radians(viewingAngle), glm::vec3(0, 1, 0));
-		modelViewMatrix = glm::translate(modelViewMatrix, bottomPlaneCollider->getPosition());
-		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
-
-		modelViewProjectionMatrix = perspectiveProjection * modelViewMatrix;
-		glUniformMatrix4fv(mvLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
-		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
-		glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE, glm::value_ptr(normalTransformationMatrix));
-
-		bottomPlaneCollider->renderer->draw();*/
+		destinationBox->renderer->draw();
+		obstacleBox->renderer->draw();
 
 		//Swap front and back buffers 
 		glfwSwapBuffers(window);

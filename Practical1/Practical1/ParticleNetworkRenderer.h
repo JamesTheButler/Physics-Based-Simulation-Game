@@ -34,15 +34,6 @@ public:
 
 	}
 
-
-	/*The cloth consists of triangles pairs of four particles in the grid as follows:
-
-	(x,y)   *--* (x+1,y)
-	| /|
-	|/ |
-	(x,y+1) *--* (x+1,y+1)
-
-	*/
 	void draw() {
 		std::vector<unsigned int> constraintsVec;
 		for (Constraint constraint : constraints) {

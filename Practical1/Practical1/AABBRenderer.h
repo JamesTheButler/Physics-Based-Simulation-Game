@@ -2,22 +2,27 @@
 
 #include "Renderer.h"
 
-class PlaneRenderer : public Renderer {
+class AABBRenderer : public Renderer {
 private:
 	std::vector<vec3> positions;
+	float width, height;
 
 public:
-	PlaneRenderer(GLhandleARB shaderProgramId, vec3 position, vec3 normal) :
+	AABBRenderer(GLhandleARB shaderProgramId, vec3 position, float width, float height) :
 		Renderer(shaderProgramId) {
 
 		//draw line perpendicular to the normal through the position (i.e. draw the edge)
-		positions.push_back(position + 50.f * vec3(normal.y, -normal.x, 0));
-		positions.push_back(position - 50.f * vec3(normal.y, -normal.x, 0));
+		positions.push_back(position + vec3(width / 2, height / 2, 0));
+		positions.push_back(position + vec3(width / 2, -height / 2, 0));
+		positions.push_back(position + vec3(-width / 2, -height / 2, 0));
+		positions.push_back(position + vec3(-width / 2, height / 2, 0));
+		positions.push_back(position + vec3(width / 2, height / 2, 0));
+
 
 		numberOfVertices = positions.size();
 
-		for (int i = 0; i < 2; i++) {
-			normals.push_back(normal);
+		for (int i = 0; i < 5; i++) {
+			normals.push_back(vec3(0,0,0));
 		}
 	}
 
@@ -43,9 +48,8 @@ public:
 		glVertexAttribPointer(vertexNormalAttribLocation, 3, GL_SCALAR, GL_FALSE, 0, NULL);
 		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3), &(normals[0]), GL_DYNAMIC_DRAW);
 
-		//Render the particles and constraints of the cloth:
 		glUniform4f(colorLocation, 0, 1, 0, 1);
-		glDrawArrays(GL_LINES, 0, numberOfVertices);
+		glDrawArrays(GL_LINE_STRIP, 0, numberOfVertices);
 
 		glDisableVertexAttribArray(vertexNormalAttribLocation);
 	}
