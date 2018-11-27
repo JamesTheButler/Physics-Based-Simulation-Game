@@ -139,8 +139,8 @@ public:
 				Particle closestParticle = ropeMgr->getClosestParticle(positions[i + 8], connectionThreshold);
 				// make constraint between arm and rope particle, if possible
 				if (closestParticle.id != -1) {
-					makeConstraint(closestParticle.id,*closestParticle.positions, *closestParticle.isMovables, i + 8, positions, isMovables);
-					//makeConstraint(i + 8, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables);
+					std::cout << "XX??";
+					makeConstraint(i + 8, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables);
 					armConenctions[i] = true;
 					//if (constraints[constraints.size()-1].isConnector())
 					std::cout << "made constraint\n";
