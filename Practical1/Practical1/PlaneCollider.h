@@ -3,29 +3,25 @@
 #include "Collider.h"
 
 class PlaneCollider : public Collider {
-
 private:
-
-	//--------------------------------------- Private member variables -------------------------------------------
 	vec3 normal;
 	vec3 position;
 
 public:
-
-	//--------------------------------------- Public methods -----------------------------------------------------
 	PlaneCollider(vec3 position, vec3 normal, GLhandleARB shaderProgramId) : Collider() {
 		this->position = position;
 		this->normal = normal;
 
 		renderer = new PlaneRenderer(shaderProgramId, position, -normal);
-
 		renderer->setupOpenGLBuffers();
 	}
 
 	void handleCollision(vec3 & particlePosition) {
 		float dot = glm::dot((particlePosition - position), normal);
-		if(dot<0)
+		if (dot < 0) {
+			std::cout << "collided\n";
 			particlePosition = particlePosition - normal * dot;
+		}
 	}
 
 	vec3 getPosition() {

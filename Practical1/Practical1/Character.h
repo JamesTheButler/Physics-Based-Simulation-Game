@@ -103,6 +103,8 @@ public:
 		normals.resize(numberOfParticles, vec3(0, 0, 0));
 		renderer->setupOpenGLBuffers();
 		renderer->setNormals(normals);
+
+		std::cout << "Character: created at ("<<startCenter.x<<", "<<startCenter.y<<", "<< startCenter.z <<")\n";
 	}
 
 	void reinitialize(IntegrationScheme integrationScheme) {

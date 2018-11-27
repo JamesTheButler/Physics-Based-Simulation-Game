@@ -31,7 +31,7 @@ const float CHAR_ARM_LENGTH = 3.5f;
 const float ROPE_SIZE = 0.25f;
 const float GRAVITY = -4.f;
 const int SIMULATION_ITERATIONS_PER_FRAME = 3;
-const float CONNECTION_THRESHOLD = .2f;
+const float CONNECTION_THRESHOLD = .8f;
 
 Character * character;
 Rope * rope;
@@ -155,7 +155,7 @@ int main(void) {
 	topPlaneCollider->setActive(true);
 	colliders.push_back(topPlaneCollider);
 
-	bottomPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, 1, 0), shaderProgramId);
+	bottomPlaneCollider = new PlaneCollider(vec3(3, 0, 0), vec3(0, 1, 0), shaderProgramId);
 	bottomPlaneCollider->setActive(true);
 	colliders.push_back(bottomPlaneCollider);
 
