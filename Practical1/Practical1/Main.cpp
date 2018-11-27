@@ -145,11 +145,12 @@ int main(void) {
 	const SCALAR dragConstant = DRAG_CONSTANT;
 	const int constraintIterations = CONSTRAINT_ITERATIONS;
 
+	std::vector<Collider *> colliders;
+
 	character = new Character(currentIntegrationScheme, shaderProgramId, CHAR_SIZE, CHAR_ARM_LENGTH, vec3(3,4,0));
 	character->solver->setConstraintIterations(constraintIterations);
 	character->solver->setDragConstant(dragConstant);
-	
-	std::vector<Collider *> colliders;
+	character->solver->setColliders(colliders);
 
 	topPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, -1, 0), shaderProgramId);
 	topPlaneCollider->setActive(true);
