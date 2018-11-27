@@ -38,8 +38,7 @@ public:
 			constraintsVec.push_back(constraint.getP2());
 		}
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, linesIndexBufferHandle);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, constraintsVec.size() * sizeof(unsigned int),
-			&(constraintsVec[0]), GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, constraintsVec.size() * sizeof(unsigned int),	&(constraintsVec[0]), GL_STATIC_DRAW);
 	}
 
 
@@ -61,8 +60,7 @@ public:
 
 		glBindBuffer(GL_ARRAY_BUFFER, vertexNormalBufferHandle);
 		glVertexAttribPointer(vertexNormalAttribLocation, 3, GL_SCALAR, GL_FALSE, 0, NULL);
-		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3),
-			&(normals[0]), GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3), &(normals[0]), GL_DYNAMIC_DRAW);
 
 		//Render the particles and constraints of the cloth:
 		glUniform4f(colorLocation, 0, 1, 0, 1);

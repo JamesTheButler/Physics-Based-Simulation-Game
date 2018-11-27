@@ -15,13 +15,12 @@
 //#define DOUBLE_PRECISION			//Uncomment this line to switch to double precision
 
 #include "ParticleNetworkRenderer.h"
-
+#include "Particle.h"
 #include "PlaneRenderer.h"
 #include "PlaneCollider.h"
 #include "Collider.h"
-#include "ConnectorConstraint.h"
-#include "Character.h"
 #include "RopeManager.h"
+#include "Character.h"
 
 const SCALAR INITIAL_TIME_STEP_SIZE = 0.008;
 const SCALAR DRAG_CONSTANT = 0.0;
@@ -32,6 +31,7 @@ const float CHAR_ARM_LENGTH = 3.5f;
 const float ROPE_SIZE = 0.25f;
 const float GRAVITY = -4.f;
 const int SIMULATION_ITERATIONS_PER_FRAME = 3;
+const float CONNECTION_THRESHOLD = .2f;
 
 Character * character;
 Rope * rope;
@@ -49,13 +49,6 @@ bool isPlayerGravityEnabled = false;
 bool areArmsSticky = false;
 float timer = 0.0f;
 float viewingAngle = 25.0f;
-
-struct Particle {
-	int id;
-	std::vector<vec3> * positions;
-	std::vector<bool> * isMovables;
-};
-
 
 void startGame() {
 	isPlayerGravityEnabled = true;
@@ -87,6 +80,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			break;
 		case GLFW_KEY_2:
 			areArmsSticky=!areArmsSticky;
+			if (!areArmsSticky)
+				std::cout << "NOT ";
+			std::cout << "arms sticky\n";
 			break;
 		}
 	}
@@ -173,20 +169,11 @@ int main(void) {
 
 	//Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window)) {
-
 		auto startTime = std::chrono::high_resolution_clock::now();
 
 		timer++;
 		if (areArmsSticky)
-		{
-			//check each arm for closest particle
-			for (int i = 0; i < 4; i++) {
-			/*	Particle closestParticle = ropeMgr->getClosestParticle(arm[i], 0.01f);
-				if(closestParticle.id!=-1)
-					makeConnectorConstraint();
-			*/}
-		}
-
+			character->applyConnectorConstraints(ropeMgr, CONNECTION_THRESHOLD);
 
 		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
@@ -194,10 +181,9 @@ int main(void) {
 				character->addForce(vec3(0, GRAVITY, 0));
 				character->timeStep(timeStepSize, dragEnabled);
 			}
-
 			ropeMgr->timeStep(GRAVITY, timeStepSize);
 		}
-		//deleteAllConnectorConstraints();
+		character->removeConnectorConstraints();
 
 		//render:
 		glfwGetFramebufferSize(window, &width, &height);

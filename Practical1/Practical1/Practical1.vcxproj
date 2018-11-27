@@ -144,8 +144,8 @@
   <ItemGroup>
     <ClInclude Include="Character.h" />
     <ClInclude Include="Collider.h" />
-    <ClInclude Include="ConnectorConstraint.h" />
     <ClInclude Include="Constraint.h" />
+    <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleNetworkRenderer.h" />
     <ClInclude Include="PlaneCollider.h" />
     <ClInclude Include="PlaneRenderer.h" />

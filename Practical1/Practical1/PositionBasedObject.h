@@ -15,10 +15,7 @@ typedef glm::vec3 vec3;
 
 
 class PositionBasedObject {
-
 protected:
-
-	//--------------------------------------- Protected methods --------------------------------------------------
 	//The cloth consists of a grid of particles. The particle properties are stored in the following vectors:
 	std::vector<vec3> positions;
 	std::vector<vec3> oldPositions;
@@ -26,7 +23,6 @@ protected:
 	std::vector<vec3> accelerations;
 	std::vector<SCALAR> masses;
 	std::vector<bool> isMovables;
-
 	std::vector<Constraint> constraints; // constraints between the particles
 
 	//Method for calculating the triangle normal:
@@ -52,22 +48,14 @@ protected:
 		accelerations[p3] += force / masses[p3];
 	}
 
-	inline void makeConstraint(int p1, int p2) {
-		constraints.push_back(Constraint(p1, p2, positions, isMovables));
+	virtual void makeConstraint(int p1, int p2) {
+		constraints.push_back(Constraint(p1, positions, isMovables, p2, positions, isMovables));
 	}
-	//TODO
-	//inline void makeConnectorConstraint(int p1, int p2) {
-	//	constraints.push_back(Constraint(p1, p2, positions, isMovables));
-	//}
-
 
 public:
-
-	//--------------------------------------- Public member variables --------------------------------------------
 	Solver * solver;
 	Renderer * renderer;
-
-	//--------------------------------------- Public methods -----------------------------------------------------
+	
 	PositionBasedObject() {
 	}
 

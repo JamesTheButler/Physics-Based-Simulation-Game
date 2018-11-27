@@ -12,7 +12,6 @@ private:
 	float size;
 	float armLength;
 	vec3 startCenter;
-	std::vector<bool> isArmSticky;
 
 	//--------------------------------------- Private methods ----------------------------------------------------
 	void initializePositions() {
@@ -39,41 +38,44 @@ private:
 
 	void initializeConstraints() {
 		// A,B,C,D
-		makeConstraint(0, 1);
-		makeConstraint(0, 2);
-		makeConstraint(0, 3);
-		makeConstraint(0, 4);
-		makeConstraint(0, 7);
-		makeConstraint(1, 2);
-		makeConstraint(1, 3);
-		makeConstraint(1, 4);
-		makeConstraint(1, 5);
-		makeConstraint(2, 3);
-		makeConstraint(2, 5);
-		makeConstraint(2, 6);
-		makeConstraint(3, 6);
-		makeConstraint(3, 7);
+		PositionBasedObject::makeConstraint(0, 1);
+		PositionBasedObject::makeConstraint(0, 2);
+		PositionBasedObject::makeConstraint(0, 3);
+		PositionBasedObject::makeConstraint(0, 4);
+		PositionBasedObject::makeConstraint(0, 7);
+		PositionBasedObject::makeConstraint(1, 2);
+		PositionBasedObject::makeConstraint(1, 3);
+		PositionBasedObject::makeConstraint(1, 4);
+		PositionBasedObject::makeConstraint(1, 5);
+		PositionBasedObject::makeConstraint(2, 3);
+		PositionBasedObject::makeConstraint(2, 5);
+		PositionBasedObject::makeConstraint(2, 6);
+		PositionBasedObject::makeConstraint(3, 6);
+		PositionBasedObject::makeConstraint(3, 7);
 		// E, F, G, H
-		makeConstraint(4, 5);
-		makeConstraint(4, 6);
-		makeConstraint(4, 7);
-		makeConstraint(5, 6);
-		makeConstraint(5, 7);
-		makeConstraint(6, 7);
+		PositionBasedObject::makeConstraint(4, 5);
+		PositionBasedObject::makeConstraint(4, 6);
+		PositionBasedObject::makeConstraint(4, 7);
+		PositionBasedObject::makeConstraint(5, 6);
+		PositionBasedObject::makeConstraint(5, 7);
+		PositionBasedObject::makeConstraint(6, 7);
 		//arms
-		makeConstraint(8, 0);
-		makeConstraint(8, 4);
-		makeConstraint(8, 7);
-		makeConstraint(9, 1);
-		makeConstraint(9, 4);
-		makeConstraint(9, 5);
-		makeConstraint(10, 2);
-		makeConstraint(10, 5);
-		makeConstraint(10, 6);
-		makeConstraint(11, 3);
-		makeConstraint(11, 6);
-		makeConstraint(11, 7);
-
+		PositionBasedObject::makeConstraint(8, 0);
+		PositionBasedObject::makeConstraint(8, 4);
+		PositionBasedObject::makeConstraint(8, 7);
+		PositionBasedObject::makeConstraint(9, 1);
+		PositionBasedObject::makeConstraint(9, 4);
+		PositionBasedObject::makeConstraint(9, 5);
+		PositionBasedObject::makeConstraint(10, 2);
+		PositionBasedObject::makeConstraint(10, 5);
+		PositionBasedObject::makeConstraint(10, 6);
+		PositionBasedObject::makeConstraint(11, 3);
+		PositionBasedObject::makeConstraint(11, 6);
+		PositionBasedObject::makeConstraint(11, 7);
+		if (constraints[constraints.size()-1].isConnector())
+			std::cout << "is connector\n";
+		else
+			std::cout << "is NOT connector\n";
 	}
 
 public:
@@ -102,19 +104,9 @@ public:
 		}
 		initializeConstraints();
 
-		isArmSticky.resize(4, false);
-
 		normals.resize(numberOfParticles, vec3(0, 0, 0));
 		renderer->setupOpenGLBuffers();
 		renderer->setNormals(normals);
-	}
-
-	std::vector<vec3> getStickyArms() {
-		std::vector<vec3> stickyArms;
-		for (int i = 0; i <= 3; i++)
-			if (isArmSticky[i])
-				stickyArms.push_back(positions[i + 8]);
-		return stickyArms;
 	}
 
 	void reinitialize(IntegrationScheme integrationScheme) {
@@ -133,11 +125,27 @@ public:
 		}
 	}
 
-	void setArmSticky(int id, bool isSticky) {
-		isArmSticky[id] = isSticky;
+	void makeConstraint(int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1, int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2) {
+		constraints.push_back(Constraint(p1, positions1, isMovables1, p2, positions2, isMovables2));
 	}
 
-	void setAllArmsSticky(bool isSticky) {
-		isArmSticky.resize(4, isSticky);
+	void applyConnectorConstraints(RopeManager* ropeMgr, float connectionThreshold) {
+		//check each arm for closest particle
+		for (int i = 0; i < 4; i++) {
+			Particle closestParticle = ropeMgr->getClosestParticle(positions[i+8], connectionThreshold);
+			// make constraint between arm and rope particle, if possible
+			if (closestParticle.id != -1) {
+				makeConstraint(i+8, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables);
+				if (constraints[constraints.size()-1].isConnector())
+					std::cout << "is connector\n";
+				else
+					std::cout << "is NOT connector\n";
+				std::cout << "made constraint";
+			}
+		}
+	}
+
+	void removeConnectorConstraints() {
+
 	}
 };

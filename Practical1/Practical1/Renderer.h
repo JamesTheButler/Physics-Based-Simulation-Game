@@ -13,8 +13,6 @@ typedef glm::vec3 vec3;
 class Renderer {
 
 protected:
-
-	//--------------------------------------- Protected member variables -----------------------------------------
 	std::vector<vec3> normals;
 
 	//OpenGL related member variables:
@@ -26,8 +24,6 @@ protected:
 	int numberOfVertices;
 
 public:
-
-	//--------------------------------------- Public methods -----------------------------------------------------
 	Renderer(GLhandleARB shaderProgramId) : shaderProgramId(shaderProgramId) {
 
 	}
