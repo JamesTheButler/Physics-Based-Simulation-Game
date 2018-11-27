@@ -13,7 +13,7 @@ private:
 	float armLength;
 	vec3 startCenter;
 
-	std::vector<bool> armConections;
+	std::vector<bool> armConenctions;
 
 	//--------------------------------------- Private methods ----------------------------------------------------
 	void initializePositions() {
@@ -95,7 +95,7 @@ public:
 
 		solver = new Solver(integrationScheme, positions, oldPositions, velocities, accelerations, masses, isMovables, constraints);
 		renderer = new ParticleNetworkRenderer(shaderProgramId, positions, constraints, numberOfParticles);
-		armConections.resize(4, false);
+		armConenctions.resize(4, false);
 
 
 		initializePositions();
@@ -135,12 +135,13 @@ public:
 		//check each arm for closest particle
 		for (int i = 0; i < 4; i++) {
 			//if arm is not already connected
-			if (!armConections[i]) {
+			if (!armConenctions[i]) {
 				Particle closestParticle = ropeMgr->getClosestParticle(positions[i + 8], connectionThreshold);
 				// make constraint between arm and rope particle, if possible
 				if (closestParticle.id != -1) {
-					makeConstraint(i + 8, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables);
-					armConections[i] = true;
+					makeConstraint(closestParticle.id,*closestParticle.positions, *closestParticle.isMovables, i + 8, positions, isMovables);
+					//makeConstraint(i + 8, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables);
+					armConenctions[i] = true;
 					//if (constraints[constraints.size()-1].isConnector())
 					std::cout << "made constraint\n";
 				}
@@ -150,7 +151,9 @@ public:
 
 	void removeConnectorConstraints() {
 		int size = constraints.size();
-		if (size > 32)
+		if (size > 32) {
 			constraints.erase(constraints.begin() + 32, constraints.end());
+			armConenctions.resize(4, false);
+		}
 	}
 };

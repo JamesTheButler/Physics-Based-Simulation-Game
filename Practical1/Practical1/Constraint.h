@@ -14,24 +14,22 @@ class Constraint {
 private:
 	SCALAR restDistance; // the length between particle p1 and p2 in rest configuration
 	int p1, p2; // the two particles that are connected through this constraint
-	std::vector<vec3> & positions1, &positions2;
-	std::vector<bool> & isMovables1, &isMovables2;
+	std::vector<vec3> & positions1, & positions2;
+	std::vector<bool> & isMovables1, & isMovables2;
 
 public:
-	Constraint(int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1, int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2)
-		: positions1(positions1), isMovables1(isMovables1), positions2(positions2), isMovables2(isMovables2) {
+	Constraint(	int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1, 
+				int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2)
+				:	positions1(positions1), isMovables1(isMovables1),
+					positions2(positions2), isMovables2(isMovables2) {
+
 		this->p1 = p1;
 		this->p2 = p2;
 
 		vec3 vec = positions1[p1] - positions2[p2];
 		restDistance = glm::length(vec);
 	}
-	/*
-	Constraint(const Constraint & c2) : positions1(c2.positions1), isMovables1(c2.isMovables1), positions2(c2.positions2), isMovables2(c2.isMovables2) {
-		this->p1 = c2.p1;
-		this->p2 = c2.p2;
-	}
-	*/
+
 	Constraint& operator=(const Constraint& c) {
 		this->p1 = c.p1;
 		this->p2 = c.p2;
@@ -45,7 +43,7 @@ public:
 	void solveConstraints() {
 		glm::vec3 vec = positions1[p1] - positions2[p2];
 		if (isMovables1[p1])
-			positions1[p1] += -0.5f *(glm::length(vec) - restDistance) * glm::normalize(vec);
+			positions1[p1] += - 0.5f *(glm::length(vec) - restDistance) * glm::normalize(vec);
 		if(isMovables2[p2])
 			positions2[p2] += 0.5f *(glm::length(vec) - restDistance) * glm::normalize(vec);
 	}
