@@ -62,12 +62,6 @@ void startGame() {
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
-		/*case GLFW_KEY_I:
-			character->reinitialize(currentIntegrationScheme);
-			rope->reinitialize(currentIntegrationScheme);
-			timer = 0.0f;
-			std::cout << "Reinitialized the simulation" << std::endl;
-			break;*/
 		case GLFW_KEY_SPACE:
 			windEnabled = !windEnabled;
 			std::cout << (std::string("Turned wind ") + (windEnabled ? "on" : "off")).c_str() << std::endl;
@@ -164,11 +158,11 @@ int main(void) {
 	bottomPlaneCollider->setActive(true);
 	colliders.push_back(bottomPlaneCollider);
 
-	destinationBox = new AABBCollider(vec3(-9.25f, 0.5f, 0), 4, 1.1f, shaderProgramId);
+	destinationBox = new AABBCollider(vec3(-9.25f, 0.5f, 0), 4, 1.f, shaderProgramId);
 	destinationBox->setActive(true);
 	colliders.push_back(destinationBox);
 
-	obstacleBox = new AABBCollider(vec3(-3.5f, 1, 0), 0.6f, 2.1f, shaderProgramId);
+	obstacleBox = new AABBCollider(vec3(-3.5f, 1, 0), 0.6f, 2.f, shaderProgramId);
 	obstacleBox->setActive(true);
 	colliders.push_back(obstacleBox);
 

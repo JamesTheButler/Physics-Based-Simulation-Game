@@ -150,10 +150,15 @@ public:
 	}
 
 	void removeConnectorConstraints() {
-		int size = constraints.size();
-		if (size > 32) {
+		if (constraints.size() > 32) {
 			constraints.erase(constraints.begin() + 32, constraints.end());
 			armConenctions.resize(4, false);
 		}
 	}
+
+	/*void print() {
+		if (constraints.size()>32)
+			std::cout << constraints[32].
+	}*/
+
 };
