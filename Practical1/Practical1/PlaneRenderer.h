@@ -4,13 +4,9 @@
 
 class PlaneRenderer : public Renderer {
 private:
-
-	//--------------------------------------- Private member variables -------------------------------------------
 	std::vector<vec3> positions;
 
 public:
-
-	//--------------------------------------- Public methods -----------------------------------------------------
 	PlaneRenderer(GLhandleARB shaderProgramId, vec3 position, vec3 normal) :
 		Renderer(shaderProgramId) {
 

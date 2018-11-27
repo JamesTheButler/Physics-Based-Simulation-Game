@@ -32,13 +32,6 @@ public:
 
 		colorLocation = glGetUniformLocation(shaderProgramId, "color");
 
-		std::vector<unsigned int> constraintsVec;
-		for (Constraint constraint : constraints) {
-			constraintsVec.push_back(constraint.getP1());
-			constraintsVec.push_back(constraint.getP2());
-		}
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, linesIndexBufferHandle);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, constraintsVec.size() * sizeof(unsigned int),	&(constraintsVec[0]), GL_STATIC_DRAW);
 	}
 
 
@@ -51,6 +44,15 @@ public:
 
 	*/
 	void draw() {
+		std::vector<unsigned int> constraintsVec;
+		for (Constraint constraint : constraints) {
+			constraintsVec.push_back(constraint.getP1());
+			constraintsVec.push_back(constraint.getP2());
+		}
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, linesIndexBufferHandle);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, constraintsVec.size() * sizeof(unsigned int), &(constraintsVec[0]), GL_STATIC_DRAW);
+	
+
 		glEnableVertexAttribArray(vertexPosAttribLocation);
 		glEnableVertexAttribArray(vertexNormalAttribLocation);
 

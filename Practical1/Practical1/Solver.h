@@ -9,8 +9,6 @@ enum IntegrationScheme { verlet };
 
 class Solver {
 private:
-
-	//--------------------------------------- Private member variables -------------------------------------------
 	std::vector<vec3> & positions;
 	std::vector<vec3> & oldPositions;
 	std::vector<vec3> & velocities;
@@ -29,8 +27,6 @@ private:
 	SCALAR dragConstant;
 
 public:
-
-	//--------------------------------------- Public methods -----------------------------------------------------
 	Solver(IntegrationScheme integrationScheme,
 		std::vector<vec3> & positions,
 		std::vector<vec3> & oldPositions,
@@ -78,7 +74,7 @@ public:
 			}
 		}
 
-		//Constraint solving: TODO: connectors
+		//Constraint solving
 		for (int i = 0; i < constraintIterations; i++) {
 			for (Constraint constraint : constraints) {
 				constraint.solveConstraints();

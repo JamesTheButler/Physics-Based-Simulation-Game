@@ -151,13 +151,13 @@ int main(void) {
 	
 	std::vector<Collider *> colliders;
 
-	/*topPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, -1, 0), shaderProgramId);
+	topPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, -1, 0), shaderProgramId);
 	topPlaneCollider->setActive(true);
 	colliders.push_back(topPlaneCollider);
 
-	bottomPlaneCollider = new PlaneCollider(vec3(0, -1, 0), vec3(0, 1, 0), shaderProgramId);
+	bottomPlaneCollider = new PlaneCollider(vec3(0, 1, 0), vec3(0, 1, 0), shaderProgramId);
 	bottomPlaneCollider->setActive(true);
-	colliders.push_back(bottomPlaneCollider);*/
+	colliders.push_back(bottomPlaneCollider);
 
 	ropeMgr = new RopeManager( shaderProgramId, constraintIterations, dragConstant, ROPE_SIZE);
 

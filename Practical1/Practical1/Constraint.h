@@ -26,6 +26,21 @@ public:
 		vec3 vec = positions1[p1] - positions2[p2];
 		restDistance = glm::length(vec);
 	}
+	/*
+	Constraint(const Constraint & c2) : positions1(c2.positions1), isMovables1(c2.isMovables1), positions2(c2.positions2), isMovables2(c2.isMovables2) {
+		this->p1 = c2.p1;
+		this->p2 = c2.p2;
+	}
+	*/
+	Constraint& operator=(const Constraint& c) {
+		this->p1 = c.p1;
+		this->p2 = c.p2;
+		this->positions1 = c.positions1;
+		this->positions2 = c.positions2;
+		this->isMovables1 = c.isMovables1;
+		this->isMovables2 = c.isMovables2;
+		return *this;
+	}
 
 	void solveConstraints() {
 		glm::vec3 vec = positions1[p1] - positions2[p2];

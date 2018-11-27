@@ -11,21 +11,13 @@ typedef glm::vec3 vec3;
 #endif
 
 class Collider {
-
 private:
-
-	//--------------------------------------- Private member variables -------------------------------------------
 	bool active = true;
 
 public: 
-
-	//--------------------------------------- Public member variables --------------------------------------------
 	Renderer * renderer;
 
-	//--------------------------------------- Public methods -----------------------------------------------------
-	Collider() {
-
-	}
+	Collider() {}
 
 	~Collider() {
 		delete(renderer);

@@ -72,10 +72,6 @@ private:
 		PositionBasedObject::makeConstraint(11, 3);
 		PositionBasedObject::makeConstraint(11, 6);
 		PositionBasedObject::makeConstraint(11, 7);
-		if (constraints[constraints.size()-1].isConnector())
-			std::cout << "is connector\n";
-		else
-			std::cout << "is NOT connector\n";
 	}
 
 public:
@@ -136,16 +132,15 @@ public:
 			// make constraint between arm and rope particle, if possible
 			if (closestParticle.id != -1) {
 				makeConstraint(i+8, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables);
-				if (constraints[constraints.size()-1].isConnector())
-					std::cout << "is connector\n";
-				else
-					std::cout << "is NOT connector\n";
-				std::cout << "made constraint";
+				//if (constraints[constraints.size()-1].isConnector())
+					std::cout << "made constraint";
 			}
 		}
 	}
 
 	void removeConnectorConstraints() {
-
+		int size = constraints.size();
+		if (size > 32)
+			constraints.erase(constraints.begin() + 32, constraints.end());
 	}
 };
