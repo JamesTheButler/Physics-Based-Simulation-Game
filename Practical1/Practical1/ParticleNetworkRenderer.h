@@ -27,9 +27,7 @@ public:
 		vertexNormalAttribLocation = glGetAttribLocation(shaderProgramId, "vertexNormal");
 
 		colorLocation = glGetUniformLocation(shaderProgramId, "color");
-	}
 
-	void draw() {
 		std::vector<unsigned int> constraintsVec;
 		for (Constraint constraint : constraints) {
 			constraintsVec.push_back(constraint.getP1());
@@ -37,6 +35,9 @@ public:
 		}
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, linesIndexBufferHandle);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, constraintsVec.size() * sizeof(unsigned int), &(constraintsVec[0]), GL_STATIC_DRAW);
+	}
+
+	void draw() {
 	
 
 		glEnableVertexAttribArray(vertexPosAttribLocation);

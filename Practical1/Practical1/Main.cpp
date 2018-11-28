@@ -188,11 +188,11 @@ int main(void) {
 	bottomPlaneCollider->setActive(true);
 	colliders.push_back(bottomPlaneCollider);
 
-	destinationBox = new AABBCollider(vec3(-9.25f, 0.5f, 0), 4, 1.f, shaderProgramId);
+	destinationBox = new AABBCollider(vec3(-10.0f, 0.25f, 0), 3, .5f, shaderProgramId);
 	destinationBox->setActive(true);
 	colliders.push_back(destinationBox);
 
-	obstacleBox = new AABBCollider(vec3(-3.5f, 1, 0), 0.6f, 2.f, shaderProgramId);
+	obstacleBox = new AABBCollider(vec3(-8.6715f, .5f, 0), 0.5f, 1, shaderProgramId);
 	obstacleBox->setActive(true);
 	colliders.push_back(obstacleBox);
 
