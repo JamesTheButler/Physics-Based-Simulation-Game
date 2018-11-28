@@ -128,8 +128,8 @@ public:
 		}
 	}
 
-
-	void applyConnectorConstraints(RopeManager* ropeMgr, float connectionThreshold) {
+	//
+	void tryConnectorConstraint(RopeManager* ropeMgr, float connectionThreshold) {
 		Particle closestParticle;
 		float closestDistance = 9999.f;
 		closestParticle.id = -1;
@@ -140,11 +140,10 @@ public:
 			for (int i = 0; i < 4; i++) {
 				//if arm is not already connected
 					Particle tempParticle = ropeMgr->getClosestParticle(positions[i + 8], connectionThreshold);
-
+					//check if this one is the closest pair of rope particle and arm
 					if (tempParticle.id != -1) {
 						float tempDistance = glm::distance(tempParticle.positions->at(tempParticle.id), positions[i + 8]);
 						if (tempDistance < closestDistance) {
-							std::cout << "test 3\n";
 							closestParticle = tempParticle;
 							closestDistance = tempDistance;
 							armId = i+8;
@@ -154,7 +153,6 @@ public:
 			}
 		// make constraint between arm and rope particle, if possible
 		if (closestParticle.id != -1 && armId != -1) {
-			std::cout << "test 4\n";
 			makeConstraint(armId, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables, 0);
 			isArmConnected = true;
 		}

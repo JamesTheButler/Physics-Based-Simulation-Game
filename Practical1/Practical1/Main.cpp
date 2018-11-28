@@ -213,7 +213,7 @@ int main(void) {
 
 		// enable connectors
 		if (areArmsSticky)
-			character->applyConnectorConstraints(ropeMgr, CONNECTION_THRESHOLD);
+			character->tryConnectorConstraint(ropeMgr, CONNECTION_THRESHOLD);
 
 		for (int i = 0; i < SIMULATION_ITERATIONS_PER_FRAME; i++) {
 			//advance the simulation one time step (in a more efficient implementation this should be done in a separate thread to decouple rendering frame rate from simulation rate):
