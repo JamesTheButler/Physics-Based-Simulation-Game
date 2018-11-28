@@ -18,6 +18,19 @@ private:
 	std::vector<bool> & isMovables1, & isMovables2;
 
 public:
+	Constraint(int p1, int p2, std::vector<vec3> & positions, std::vector<bool> & isMovables)
+		: positions1(positions), isMovables1(isMovables),
+		positions2(positions), isMovables2(isMovables) {
+
+		this->p1 = p1;
+		this->p2 = p2;
+
+		vec3 vec = positions1[p1] - positions2[p2];
+		restDistance = glm::length(vec);
+	}
+
+
+
 	Constraint(	int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1, 
 				int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2)
 				:	positions1(positions1), isMovables1(isMovables1),
@@ -28,6 +41,16 @@ public:
 
 		vec3 vec = positions1[p1] - positions2[p2];
 		restDistance = glm::length(vec);
+	}
+
+	Constraint(int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1,
+		int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2, SCALAR restDistance)
+		: positions1(positions1), isMovables1(isMovables1),
+		positions2(positions2), isMovables2(isMovables2) {
+
+		this->p1 = p1;
+		this->p2 = p2;
+		this->restDistance = restDistance;
 	}
 
 	Constraint& operator=(const Constraint& c) {

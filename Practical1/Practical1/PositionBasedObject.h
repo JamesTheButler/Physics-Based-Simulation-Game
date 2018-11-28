@@ -48,8 +48,17 @@ protected:
 		accelerations[p3] += force / masses[p3];
 	}
 
-	virtual void makeConstraint(int p1, int p2) {
-		constraints.push_back(Constraint(p1, positions, isMovables, p2, positions, isMovables));
+	void makeConstraint(int p1, int p2) {
+		constraints.push_back(Constraint(p1, p2, positions, isMovables));
+	}
+
+
+	void makeConstraint(int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1, int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2) {
+		constraints.push_back(Constraint(p1, positions1, isMovables1, p2, positions2, isMovables2));
+	}
+
+	void makeConstraint(int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1, int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2, SCALAR restDist) {
+		constraints.push_back(Constraint(p1, positions1, isMovables1, p2, positions2, isMovables2, restDist));
 	}
 
 public:

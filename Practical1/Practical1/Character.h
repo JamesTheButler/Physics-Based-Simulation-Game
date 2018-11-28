@@ -8,12 +8,13 @@ private:
 
 	//--------------------------------------- Private member variables -------------------------------------------
 	std::vector<vec3> normals;
+	int numberOfBaseConstraints;
 	int numberOfParticles;
 	float size;
 	float armLength;
 	vec3 startCenter;
 
-	std::vector<bool> armConenctions;
+	bool isArmConnected = false;
 
 	//--------------------------------------- Private methods ----------------------------------------------------
 	void initializePositions() {
@@ -40,40 +41,44 @@ private:
 
 	void initializeConstraints() {
 		// A,B,C,D
-		PositionBasedObject::makeConstraint(0, 1);
-		PositionBasedObject::makeConstraint(0, 2);
-		PositionBasedObject::makeConstraint(0, 3);
-		PositionBasedObject::makeConstraint(0, 4);
-		PositionBasedObject::makeConstraint(0, 7);
-		PositionBasedObject::makeConstraint(1, 2);
-		PositionBasedObject::makeConstraint(1, 3);
-		PositionBasedObject::makeConstraint(1, 4);
-		PositionBasedObject::makeConstraint(1, 5);
-		PositionBasedObject::makeConstraint(2, 3);
-		PositionBasedObject::makeConstraint(2, 5);
-		PositionBasedObject::makeConstraint(2, 6);
-		PositionBasedObject::makeConstraint(3, 6);
-		PositionBasedObject::makeConstraint(3, 7);
+		makeConstraint(0, 1);
+		makeConstraint(0, 2);
+		makeConstraint(0, 3);
+		makeConstraint(0, 4);
+		makeConstraint(0, 7);
+		makeConstraint(1, 2);
+		makeConstraint(1, 3);
+		makeConstraint(1, 4);
+		makeConstraint(1, 5);
+		makeConstraint(2, 3);
+		makeConstraint(2, 5);
+		makeConstraint(2, 6);
+		makeConstraint(3, 6);
+		makeConstraint(3, 7);
 		// E, F, G, H
-		PositionBasedObject::makeConstraint(4, 5);
-		PositionBasedObject::makeConstraint(4, 6);
-		PositionBasedObject::makeConstraint(4, 7);
-		PositionBasedObject::makeConstraint(5, 6);
-		PositionBasedObject::makeConstraint(5, 7);
-		PositionBasedObject::makeConstraint(6, 7);
+		makeConstraint(4, 5);
+		makeConstraint(4, 6);
+		makeConstraint(4, 7);
+		makeConstraint(5, 6);
+		makeConstraint(5, 7);
+		makeConstraint(6, 7);
 		//arms
-		PositionBasedObject::makeConstraint(8, 0);
-		PositionBasedObject::makeConstraint(8, 4);
-		PositionBasedObject::makeConstraint(8, 7);
-		PositionBasedObject::makeConstraint(9, 1);
-		PositionBasedObject::makeConstraint(9, 4);
-		PositionBasedObject::makeConstraint(9, 5);
-		PositionBasedObject::makeConstraint(10, 2);
-		PositionBasedObject::makeConstraint(10, 5);
-		PositionBasedObject::makeConstraint(10, 6);
-		PositionBasedObject::makeConstraint(11, 3);
-		PositionBasedObject::makeConstraint(11, 6);
-		PositionBasedObject::makeConstraint(11, 7);
+		makeConstraint(8, 0);
+		makeConstraint(8, 4);
+		makeConstraint(8, 7);
+		makeConstraint(9, 1);
+		makeConstraint(9, 4);
+		makeConstraint(9, 5);
+		makeConstraint(10, 2);
+		makeConstraint(10, 5);
+		makeConstraint(10, 6);
+		makeConstraint(11, 3);
+		makeConstraint(11, 6);
+		makeConstraint(11, 7);
+
+		makeConstraint(8, 10);
+		makeConstraint(9, 11);
+		numberOfBaseConstraints = constraints.size();
 	}
 
 public:
@@ -95,8 +100,6 @@ public:
 
 		solver = new Solver(integrationScheme, positions, oldPositions, velocities, accelerations, masses, isMovables, constraints);
 		renderer = new ParticleNetworkRenderer(shaderProgramId, positions, constraints, numberOfParticles);
-		armConenctions.resize(4, false);
-
 
 		initializePositions();
 		for (int i = 0; i < positions.size(); i++) {
@@ -107,8 +110,6 @@ public:
 		normals.resize(numberOfParticles, vec3(0, 0, 0));
 		renderer->setupOpenGLBuffers();
 		renderer->setNormals(normals);
-
-		std::cout << "Character: created at ("<<startCenter.x<<", "<<startCenter.y<<", "<< startCenter.z <<")\n";
 	}
 
 	void reinitialize(IntegrationScheme integrationScheme) {
@@ -127,33 +128,43 @@ public:
 		}
 	}
 
-	void makeConstraint(int p1, std::vector<vec3> & positions1, std::vector<bool> & isMovables1, int p2, std::vector<vec3> & positions2, std::vector<bool> & isMovables2) {
-		constraints.push_back(Constraint(p1, positions1, isMovables1, p2, positions2, isMovables2));
-	}
 
 	void applyConnectorConstraints(RopeManager* ropeMgr, float connectionThreshold) {
-		//check each arm for closest particle
-		for (int i = 0; i < 4; i++) {
-			//if arm is not already connected
-			if (!armConenctions[i]) {
-				Particle closestParticle = ropeMgr->getClosestParticle(positions[i + 8], connectionThreshold);
-				// make constraint between arm and rope particle, if possible
-				if (closestParticle.id != -1) {
-					std::cout << "XX??";
-					makeConstraint(i + 8, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables);
-					armConenctions[i] = true;
-					//if (constraints[constraints.size()-1].isConnector())
-					std::cout << "made constraint\n";
+		Particle closestParticle;
+		float closestDistance = 9999.f;
+		closestParticle.id = -1;
+		int armId = -1;
+
+		if (!isArmConnected) {
+			//check each arm for closest particle. Save arm ID and corresponding Particle
+			for (int i = 0; i < 4; i++) {
+				//if arm is not already connected
+					Particle tempParticle = ropeMgr->getClosestParticle(positions[i + 8], connectionThreshold);
+
+					if (tempParticle.id != -1) {
+						float tempDistance = glm::distance(tempParticle.positions->at(tempParticle.id), positions[i + 8]);
+						if (tempDistance < closestDistance) {
+							std::cout << "test 3\n";
+							closestParticle = tempParticle;
+							closestDistance = tempDistance;
+							armId = i+8;
+						}
+					}
 				}
 			}
+		// make constraint between arm and rope particle, if possible
+		if (closestParticle.id != -1 && armId != -1) {
+			std::cout << "test 4\n";
+			makeConstraint(armId, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables, 0);
+			isArmConnected = true;
 		}
 	}
 
 	void removeConnectorConstraints() {
 		int size = constraints.size();
-		if (size > 32) {
-			constraints.erase(constraints.begin() + 32, constraints.end());
-			armConenctions.resize(4, false);
+		if (size > numberOfBaseConstraints) {
+			constraints.erase(constraints.begin() + numberOfBaseConstraints, constraints.end());
+			isArmConnected = false;
 		}
 	}
 };

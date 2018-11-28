@@ -5,16 +5,12 @@
 
 class ParticleNetworkRenderer : public Renderer {
 private:
-
-	//--------------------------------------- Private member variables -------------------------------------------
 	std::vector<Constraint> & constraints; // constraints between the particles
 	std::vector<vec3> & positions;
 
 	GLuint linesIndexBufferHandle;
 
 public:
-
-	//--------------------------------------- Public methods -----------------------------------------------------
 	ParticleNetworkRenderer(GLhandleARB shaderProgramId, std::vector<vec3> & positions,
 		std::vector<Constraint> & constraints, const int numberOfVertices) :
 		Renderer(shaderProgramId), constraints(constraints), positions(positions) {
@@ -31,7 +27,6 @@ public:
 		vertexNormalAttribLocation = glGetAttribLocation(shaderProgramId, "vertexNormal");
 
 		colorLocation = glGetUniformLocation(shaderProgramId, "color");
-
 	}
 
 	void draw() {

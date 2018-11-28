@@ -19,13 +19,17 @@ public:
 
 	void handleCollision(vec3 & particlePosition) {
 		float xDist, yDist;
+		//determine if particle is inside box
 		xDist = particlePosition.x - position.x;
 		yDist = particlePosition.y - position.y;
+		// if so, move it towards the position outside the box clostes to the current positions
 		if (abs(xDist) < width / 2 && abs(yDist) < height / 2) {
-			if (abs(xDist) <= abs(yDist))
+			//find pos on wall closest do currentparticle
+			if (abs(xDist) >= abs(yDist))
 				particlePosition.x = position.x + xDist / abs(xDist) * width*0.5f;
 			else
 				particlePosition.y = position.y + yDist / abs(yDist) * height*0.5f;
+		
 		}
 
 	}

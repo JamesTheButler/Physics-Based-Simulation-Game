@@ -17,10 +17,12 @@
 #include "ParticleNetworkRenderer.h"
 #include "Particle.h"
 #include "PlaneRenderer.h"
+#include "Collider.h"
+
 #include "PlaneCollider.h"
 #include "AABBRenderer.h"
 #include "AABBCollider.h"
-#include "Collider.h"
+
 #include "RopeManager.h"
 #include "Character.h"
 
@@ -28,10 +30,12 @@ const SCALAR INITIAL_TIME_STEP_SIZE = 0.008;
 const SCALAR DRAG_CONSTANT = 0.0;
 const int CONSTRAINT_ITERATIONS = 2;
 
-const float CHAR_SIZE = 0.1f;
+const float CHAR_SIZE = 0.12f;
 const float CHAR_ARM_LENGTH = 3.5f;
+const float BOX_SIZE = 1.f;
 const float ROPE_SIZE = 0.25f;
 const float GRAVITY = -4.f;
+const float INPUT_POWER = 4.0f;
 const int SIMULATION_ITERATIONS_PER_FRAME = 3;
 const float CONNECTION_THRESHOLD = .1f;
 
@@ -43,6 +47,7 @@ PlaneCollider * rightPlaneCollider;
 PlaneCollider * bottomPlaneCollider;
 AABBCollider * destinationBox;
 AABBCollider * obstacleBox;
+
 
 IntegrationScheme currentIntegrationScheme = verlet;
 
@@ -59,15 +64,17 @@ void startGame() {
 	isPlayerGravityEnabled = true;
 }
 
+void moveRight() {
+	character->addForce(vec3(INPUT_POWER, 0, 0));
+}
+
+void moveLeft() {
+	character->addForce(vec3(-INPUT_POWER, 0, 0));
+}
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
-		/*case GLFW_KEY_I:
-			character->reinitialize(currentIntegrationScheme);
-			rope->reinitialize(currentIntegrationScheme);
-			timer = 0.0f;
-			std::cout << "Reinitialized the simulation" << std::endl;
-			break;*/
 		case GLFW_KEY_SPACE:
 			windEnabled = !windEnabled;
 			std::cout << (std::string("Turned wind ") + (windEnabled ? "on" : "off")).c_str() << std::endl;
@@ -76,7 +83,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			printElapsedTime = !printElapsedTime;
 			std::cout << "Switched printing of elapsed time" << std::endl;
 			break;
-		case GLFW_KEY_D:
+		case GLFW_KEY_O:
 			dragEnabled = !dragEnabled;
 			std::cout << (std::string("Turned drag ") + (dragEnabled ? "on" : "off")).c_str() << std::endl;
 			break;
@@ -88,6 +95,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			if (!areArmsSticky)
 				std::cout << "NOT ";
 			std::cout << "arms sticky\n";
+			break;
+		case GLFW_KEY_A:
+			moveLeft();
+			break;
+		case GLFW_KEY_D:
+			moveRight();
+			break;
+		}
+	}
+
+	if (action == GLFW_REPEAT) {
+		switch (key) {
+		case GLFW_KEY_A:
+			moveLeft();
+			break;
+		case GLFW_KEY_D:
+			moveRight();
 			break;
 		}
 	}
@@ -126,7 +150,7 @@ int main(void) {
 		return -1;
 	}
 
-	glClearColor(0.2f, 0.2f, 0.4f, 0.5f);
+	glClearColor(1.f, 1.f, 1.f, 0.5f);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -177,7 +201,7 @@ int main(void) {
 	character->solver->setDragConstant(dragConstant);
 	character->solver->setColliders(colliders);
 
-	ropeMgr = new RopeManager( shaderProgramId, constraintIterations, dragConstant, ROPE_SIZE);
+	ropeMgr = new RopeManager( shaderProgramId, constraintIterations, dragConstant, ROPE_SIZE, vec3(0,4.f,0));
 
 	std::cout << "Press 1 to start the game." << std::endl;
 	std::cout << "Press 2 to make arms sticky/unsticky." << std::endl;
@@ -185,7 +209,6 @@ int main(void) {
 	//Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window)) {
 		auto startTime = std::chrono::high_resolution_clock::now();
-
 		timer++;
 
 		// enable connectors
@@ -220,6 +243,7 @@ int main(void) {
 		}
 
 		//set up 2D rendering
+		//all objects are drawn with the same model view projection matrix
 		modelViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0, -5));
 		normalTransformationMatrix = glm::inverse(glm::transpose(modelViewMatrix));
 
@@ -231,7 +255,7 @@ int main(void) {
 		//draw rope
 		ropeMgr->draw();
 		character->renderer->draw();
-		
+
 		//draw planes + boxes
 		leftPlaneCollider->renderer->draw();
 		rightPlaneCollider->renderer->draw();

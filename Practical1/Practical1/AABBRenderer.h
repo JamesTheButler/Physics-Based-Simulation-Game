@@ -8,16 +8,13 @@ private:
 	float width, height;
 
 public:
-	AABBRenderer(GLhandleARB shaderProgramId, vec3 position, float width, float height) :
-		Renderer(shaderProgramId) {
-
-		//draw line perpendicular to the normal through the position (i.e. draw the edge)
+	AABBRenderer(GLhandleARB shaderProgramId, vec3 position, float width, float height) : Renderer(shaderProgramId) {
+		//draw line perpendicular to the normal through the position (i.e. draw the edges)
 		positions.push_back(position + vec3(width / 2, height / 2, 0));
 		positions.push_back(position + vec3(width / 2, -height / 2, 0));
 		positions.push_back(position + vec3(-width / 2, -height / 2, 0));
 		positions.push_back(position + vec3(-width / 2, height / 2, 0));
 		positions.push_back(position + vec3(width / 2, height / 2, 0));
-
 
 		numberOfVertices = positions.size();
 
@@ -36,7 +33,6 @@ public:
 	}
 
 	void draw() {
-
 		glEnableVertexAttribArray(vertexPosAttribLocation);
 		glEnableVertexAttribArray(vertexNormalAttribLocation);
 
@@ -50,7 +46,6 @@ public:
 
 		glUniform4f(colorLocation, 0, 1, 0, 1);
 		glDrawArrays(GL_LINE_STRIP, 0, numberOfVertices);
-
 		glDisableVertexAttribArray(vertexNormalAttribLocation);
 	}
 

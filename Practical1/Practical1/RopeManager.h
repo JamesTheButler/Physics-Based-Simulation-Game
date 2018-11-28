@@ -6,20 +6,21 @@ private:
 	int ropeCount;
 public:
 #pragma once
-	RopeManager(GLhandleARB shaderProgramId, int constraintIterations, int dragConstant, float ropeSize) {
+	RopeManager(GLhandleARB shaderProgramId, int constraintIterations, int dragConstant, float ropeSize, vec3 offset) {
 		ropeCount = 5;
 		float ropeDistance = 1.2f*ropeSize;
 		for (int i = 0; i < ropeCount; i++) {
-			Rope *rope = new Rope(verlet, shaderProgramId, ropeSize, vec3(2-i*ropeDistance*10, 4.f, 0.f), 70*(1-2*(i%2)));
+			Rope *rope = new Rope(verlet, shaderProgramId, ropeSize, offset + vec3(2-i*ropeDistance*10, 0,0), 70*(1-2*(i%2)));
 			rope->solver->setConstraintIterations(constraintIterations);
 			rope->solver->setDragConstant(dragConstant);
 			ropes.push_back(rope);
 		}
 	}
 	
+	// find the particle in all ropes that is closest to the particle parameter
 	Particle getClosestParticle(vec3 particle, float threshold) {
 		Particle closestParticle;
-		closestParticle.id = -1;
+		closestParticle.id =-1;
 
 		float closestDistance = 10.f;
 		for (Rope* rope : ropes) {
@@ -31,8 +32,10 @@ public:
 				if (dist < threshold) {
 					if (dist < closestDistance) {
 						closestParticle = { i, ropePositions , ropeIsMovables };
+						dist = closestDistance;
 					}
 				}
+				i++;
 			}
 		}
 		return closestParticle;

@@ -19,7 +19,7 @@ public:
 	void handleCollision(vec3 & particlePosition) {
 		float dot = glm::dot((particlePosition - position), normal);
 		if (dot < 0) {
-			particlePosition = particlePosition - normal * dot;
+			particlePosition -= normal * dot;
 		}
 	}
 
