@@ -128,7 +128,7 @@ public:
 		}
 	}
 
-	//
+	//try establishing a connection between a rope particle and a player arm
 	void tryConnectorConstraint(RopeManager* ropeMgr, float connectionThreshold) {
 		Particle closestParticle;
 		float closestDistance = 9999.f;
@@ -151,6 +151,7 @@ public:
 					}
 				}
 			}
+
 		// make constraint between arm and rope particle, if possible
 		if (closestParticle.id != -1 && armId != -1) {
 			makeConstraint(armId, positions, isMovables, closestParticle.id, *closestParticle.positions, *closestParticle.isMovables, 0);
