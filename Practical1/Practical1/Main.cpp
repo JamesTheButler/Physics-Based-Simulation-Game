@@ -48,15 +48,13 @@ PlaneCollider * bottomPlaneCollider;
 AABBCollider * destinationBox;
 AABBCollider * obstacleBox;
 
-
 IntegrationScheme currentIntegrationScheme = verlet;
 
-bool windEnabled = false;
 bool renderParticlesAndConstraints = false;
 bool printElapsedTime = false;
 bool dragEnabled = true;
 bool isPlayerGravityEnabled = false;
-bool areArmsSticky = false;
+bool areArmsSticky = true;
 float timer = 0.0f;
 float viewingAngle = 25.0f;
 
@@ -75,10 +73,6 @@ void moveLeft() {
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {
 		switch (key) {
-		case GLFW_KEY_SPACE:
-			windEnabled = !windEnabled;
-			std::cout << (std::string("Turned wind ") + (windEnabled ? "on" : "off")).c_str() << std::endl;
-			break;
 		case GLFW_KEY_P:
 			printElapsedTime = !printElapsedTime;
 			std::cout << "Switched printing of elapsed time" << std::endl;
@@ -87,10 +81,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			dragEnabled = !dragEnabled;
 			std::cout << (std::string("Turned drag ") + (dragEnabled ? "on" : "off")).c_str() << std::endl;
 			break;
-		case GLFW_KEY_1:
+		case GLFW_KEY_ENTER:
 			startGame();
 			break;
-		case GLFW_KEY_2:
+		case GLFW_KEY_SPACE :
 			areArmsSticky=!areArmsSticky;
 			if (!areArmsSticky)
 				std::cout << "NOT ";
@@ -180,19 +174,19 @@ int main(void) {
 	leftPlaneCollider->setActive(true);
 	colliders.push_back(leftPlaneCollider);
 
-	rightPlaneCollider = new PlaneCollider(vec3(5, 0, 0), vec3(-1, 0, 0), shaderProgramId);
+	rightPlaneCollider = new PlaneCollider(vec3(5, 0, 0), vec3(-0.5f, 0, 0), shaderProgramId);
 	rightPlaneCollider->setActive(true);
 	colliders.push_back(rightPlaneCollider);
 
-	bottomPlaneCollider = new PlaneCollider(vec3(3, 0, 0), vec3(0, 1, 0), shaderProgramId);
+	bottomPlaneCollider = new PlaneCollider(vec3(3, 0, 0), vec3(0, 1, 0), shaderProgramId, true);
 	bottomPlaneCollider->setActive(true);
 	colliders.push_back(bottomPlaneCollider);
 
-	destinationBox = new AABBCollider(vec3(-10.0f, 0.25f, 0), 3, .5f, shaderProgramId);
+	destinationBox = new AABBCollider(vec3(-10.0f, 0.1f, 0), 2.5f, .201f, shaderProgramId, true);
 	destinationBox->setActive(true);
 	colliders.push_back(destinationBox);
 
-	obstacleBox = new AABBCollider(vec3(-8.6715f, .5f, 0), 0.5f, 1, shaderProgramId);
+	obstacleBox = new AABBCollider(vec3(-8.55f, .5f, 0), 0.4f, 1, shaderProgramId);
 	obstacleBox->setActive(true);
 	colliders.push_back(obstacleBox);
 
