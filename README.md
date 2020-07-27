@@ -1,8 +1,10 @@
 # Physically-Based Simulation Prototype
 
-**An experimental game based on physically-based simulation for the course Technology-Driven Experimental Game Design.**
+**An experimental game based on physically-based simulation.**
 
 *Teacher: Marco Fratarcangeli*
+
+*Course: Technology-Driven Experimental Game Design*
 
 <img src="/media/gameplay.gif" width="850px">
 
