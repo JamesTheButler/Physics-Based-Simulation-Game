@@ -64,7 +64,6 @@ public:
 			for (int i = 0; i < positions.size(); i++) {
 				if (isMovables[i]) {
 					if (dragEnabled) {
-						//write your code here...  //Stokes' law (assumes that we are dealing with spheres, so it's not actually accurate for cloth)
 					}
 					vec3 temp = positions[i];
 					positions[i] = positions[i] + positions[i] - oldPositions[i] + accelerations[i] * pow(timeStepSize, 2);
@@ -116,6 +115,4 @@ public:
 	void setColliders(std::vector<Collider*> colliders) {
 		this->colliders = colliders;
 	}
-
-	
 };

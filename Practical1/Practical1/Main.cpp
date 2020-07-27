@@ -130,8 +130,6 @@ int main(void) {
 
 	//Make the window's context current:
 	glfwMakeContextCurrent(window);
-	//Enable vsync. This limits the frame rate to the refresh rate of the screen (not required):
-	//glfwSwapInterval(1);	
 	glfwSwapInterval(0);
 
 	glfwSetKeyCallback(window, key_callback);
@@ -197,8 +195,10 @@ int main(void) {
 
 	ropeMgr = new RopeManager( shaderProgramId, constraintIterations, dragConstant, ROPE_SIZE, vec3(0,4.f,0));
 
-	std::cout << "Press 1 to start the game." << std::endl;
-	std::cout << "Press 2 to make arms sticky/unsticky." << std::endl;
+	std::cout << "Press ENTER to start the game." << std::endl;
+	std::cout << "Press SPACE to make arms sticky/unsticky." << std::endl;
+	std::cout << "Press ARROW KEY LEFT to give an impulse to the left." << std::endl;
+	std::cout << "Press ARROW KEY RIGHT to give an impulse to the right." << std::endl;
 
 	//Loop until the user closes the window 
 	while (!glfwWindowShouldClose(window)) {
