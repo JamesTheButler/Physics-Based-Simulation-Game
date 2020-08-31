@@ -1,8 +1,8 @@
 {
 	"project_id" : "PhysicsBasedSim",
 	"project_name" : "Physics Based Simulation Game",
-	"project_description" : "A modern implementation of the 80s classic.",
+	"project_description" : "A proof of concept for a game that relies entirely on its physics simulation.",
 	"image_uri": "media/githubio.gif",
-	"tags" : "C++,Physics Based Simuilation",
+	"tags" : "C++, Physics Based Simuilation",
 	"href_name" : "Project"
 }
